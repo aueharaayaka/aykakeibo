@@ -119,15 +119,16 @@
     position: relative; flex: 0 0 76px; min-width: 0;
   }
   .select-wrap select {
-    width: 100%; padding: 9px 18px 9px 8px; border-radius: var(--radius-sm);
+    width: 100%; padding: 9px 22px 9px 8px; border-radius: var(--radius-sm);
     border: 1.5px solid var(--pink-border); background: var(--white);
     font-family: 'Noto Sans JP', sans-serif; font-size: 16px; font-weight: 700;
     color: var(--text-body); -webkit-appearance: none; cursor: pointer;
     box-shadow: var(--shadow);
   }
-  .select-wrap::after {
-    content: '›'; position: absolute; right: 5px; top: 50%; transform: translateY(-50%) rotate(90deg);
-    color: var(--pink-main); font-size: 14px; pointer-events: none;
+  .select-wrap::after { display: none; }
+  .select-wrap .select-arrow {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    pointer-events: none; display: flex; align-items: center;
   }
   .text-input {
     flex: 1; min-width: 0; padding: 9px 8px; border-radius: var(--radius-sm);
@@ -350,8 +351,9 @@
         <option value="交通費">交通費</option>
         <option value="貯金">貯金</option>
         <option value="JO1">JO1</option>
-                <option value="その他">その他</option>
+        <option value="その他">その他</option>
       </select>
+      <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
     </div>
     <input class="text-input" type="text" id="entry-item" placeholder="品目" onkeydown="handleEntryEnter(event)">
     <input class="amount-input" type="number" id="entry-amount" placeholder="金額" inputmode="numeric" onkeydown="handleEntryEnter(event)">
@@ -391,8 +393,9 @@
           <option value="交通費">交通費</option>
           <option value="貯金">貯金</option>
           <option value="JO1">JO1</option>
-                    <option value="その他">その他</option>
+          <option value="その他">その他</option>
         </select>
+        <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </div>
       <input class="text-input" type="text" id="default-item" placeholder="品目" onkeydown="handleDefaultEnter(event)">
       <input class="amount-input" type="number" id="default-amount" placeholder="金額" inputmode="numeric" onkeydown="handleDefaultEnter(event)">
@@ -514,15 +517,8 @@
   <div class="dropdown-sheet">
     <h3>データ同期</h3>
     <p style="font-size:12px;color:#999;margin-bottom:16px;">Googleスプレッドシートを経由してPC・スマホ間でデータを同期できます。</p>
-    <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存（このデバイス→クラウド）</button>
-    <button class="edit-save-btn" onclick="syncDownload()" style="margin-bottom:10px;background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む（クラウド→このデバイス）</button>
-    <div style="border-top:1px solid var(--pink-bg);margin:12px 0;"></div>
-    <p style="font-size:11px;color:#bbb;margin-bottom:8px;">ファイルでバックアップ</p>
-    <button class="edit-save-btn" onclick="exportData()" style="margin-bottom:10px;background:var(--pink-bg);color:var(--text-dark);box-shadow:none;border:2px solid var(--pink-border);font-size:12px;">📥 ファイルに保存</button>
-    <label class="edit-save-btn" style="display:block;text-align:center;cursor:pointer;background:var(--pink-bg);color:var(--text-dark);box-shadow:none;border:2px solid var(--pink-border);font-size:12px;">
-      📤 ファイルから復元
-      <input type="file" accept=".json" onchange="importData(event)" style="display:none;">
-    </label>
+    <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存</button>
+    <button class="edit-save-btn" onclick="syncDownload()" style="background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む</button>
   </div>
 </div>
 
