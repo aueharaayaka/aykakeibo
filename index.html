@@ -38,7 +38,7 @@
   }
 
   /* ===== SCREENS ===== */
-  .screen { display: none; padding: env(safe-area-inset-top, 20px) 14px 100px; min-height: 100vh; overflow-x: hidden; }
+  .screen { display: none; padding: env(safe-area-inset-top, 14px) 14px 90px; min-height: 100vh; overflow-x: hidden; }
   .screen.active { display: block; }
 
   /* ===== BOTTOM NAV ===== */
@@ -63,7 +63,7 @@
   /* ===== HEADER ===== */
   .month-header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 20px; width: 100%;
+    margin-bottom: 12px; width: 100%;
   }
   .month-nav-btn {
     width: 34px; height: 34px; flex-shrink: 0;
@@ -82,8 +82,8 @@
   }
 
   /* ===== CARDS ===== */
-  .field-group { margin-bottom: 14px; }
-  .field-label { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+  .field-group { margin-bottom: 8px; }
+  .field-label { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 3px; }
   .field-row { display: flex; align-items: center; gap: 0; width: 100%; }
   .field-input-wrap {
     flex: 1; min-width: 0; position: relative;
@@ -92,7 +92,7 @@
   }
   .field-input {
     flex: 1; min-width: 0; background: transparent; border: none; border-radius: var(--radius);
-    padding: 14px 40px 14px 16px; font-size: 20px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif;
+    padding: 9px 40px 9px 16px; font-size: 17px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif;
     text-align: right; color: var(--text-dark);
     transition: box-shadow 0.2s; width: 100%;
   }
@@ -108,7 +108,7 @@
   /* ===== SECTION TITLE ===== */
   .section-title {
     text-align: center; font-size: 16px; font-weight: 900;
-    color: var(--pink-main); margin: 18px 0 12px;
+    color: var(--pink-main); margin: 10px 0 8px;
   }
 
   /* ===== ENTRY FORM ===== */
@@ -159,10 +159,10 @@
     box-shadow: var(--shadow); margin-bottom: 12px;
   }
   .expense-table.scrollable {
-    max-height: 260px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   .expense-row {
-    display: flex; align-items: center; padding: 9px 12px;
+    display: flex; align-items: center; padding: 6px 12px;
     border-bottom: 1px solid var(--pink-bg); gap: 6px;
     animation: slideIn 0.25s ease;
   }
@@ -183,7 +183,7 @@
   .total-bar {
     display: flex; align-items: center; gap: 8px;
     background: var(--white); border-radius: var(--radius);
-    padding: 12px 16px; box-shadow: var(--shadow);
+    padding: 8px 16px; box-shadow: var(--shadow);
   }
   .total-label { font-size: 14px; font-weight: 700; color: var(--text-dark); }
   .total-filter-btn {
@@ -193,7 +193,7 @@
     font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 700;
     color: var(--text-dark); cursor: pointer; transition: all 0.2s;
   }
-  .total-amount { flex: 1; text-align: right; font-size: 20px; font-weight: 900; color: var(--pink-main); }
+  .total-amount { flex: 1; text-align: right; font-size: 17px; font-weight: 900; color: var(--pink-main); }
   .total-unit { font-size: 14px; font-weight: 700; color: var(--text-dark); }
 
   /* ===== CATEGORY TAGS ===== */
