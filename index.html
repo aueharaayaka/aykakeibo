@@ -64,12 +64,13 @@
     margin-bottom: 20px; width: 100%;
   }
   .month-nav-btn {
-    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-    background: var(--white); border: 2px solid var(--pink-border);
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: none; border: none;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; color: var(--pink-main); transition: all 0.2s;
   }
-  .month-nav-btn:active { transform: scale(0.92); background: var(--pink-bg); }
+  .month-nav-btn:active { transform: scale(0.92); opacity: 0.6; }
+  .month-nav-btn svg { stroke-linecap: round; stroke-linejoin: round; }
   .month-title { text-align: center; flex: 1; }
   .month-title .month-num {
     font-size: 26px; font-weight: 900; color: var(--pink-main); letter-spacing: -1px;
@@ -81,16 +82,26 @@
   /* ===== CARDS ===== */
   .field-group { margin-bottom: 14px; }
   .field-label { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
-  .field-row { display: flex; align-items: center; gap: 6px; width: 100%; }
-  .field-input {
-    flex: 1; min-width: 0; background: var(--white); border: none; border-radius: var(--radius);
-    padding: 14px 16px; font-size: 20px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif;
-    text-align: right; color: var(--text-dark); box-shadow: var(--shadow);
-    transition: box-shadow 0.2s;
+  .field-row { display: flex; align-items: center; gap: 0; width: 100%; }
+  .field-input-wrap {
+    flex: 1; min-width: 0; position: relative;
+    background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+    display: flex; align-items: center;
   }
-  .field-input:focus { outline: 2px solid var(--pink-main); }
+  .field-input {
+    flex: 1; min-width: 0; background: transparent; border: none; border-radius: var(--radius);
+    padding: 14px 40px 14px 16px; font-size: 20px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif;
+    text-align: right; color: var(--text-dark);
+    transition: box-shadow 0.2s; width: 100%;
+  }
+  .field-input:focus { outline: none; }
+  .field-input-wrap:focus-within { outline: 2px solid var(--pink-main); border-radius: var(--radius); }
   .field-input.readonly { color: var(--pink-main); pointer-events: none; }
-  .field-unit { font-size: 14px; font-weight: 700; color: var(--text-dark); flex-shrink: 0; width: 16px; }
+  .field-unit-inside {
+    position: absolute; right: 12px; font-size: 13px; font-weight: 700;
+    color: var(--text-dark); pointer-events: none; flex-shrink: 0;
+  }
+  .field-unit { display: none; }
 
   /* ===== SECTION TITLE ===== */
   .section-title {
@@ -100,37 +111,39 @@
 
   /* ===== ENTRY FORM ===== */
   .entry-form {
-    display: flex; align-items: center; gap: 6px; margin-bottom: 12px;
-    width: 100%;
+    display: flex; align-items: center; gap: 4px; margin-bottom: 12px;
+    width: 100%; box-sizing: border-box;
   }
   .select-wrap {
-    position: relative; flex: 0 0 88px; min-width: 0;
+    position: relative; flex: 0 0 76px; min-width: 0;
   }
   .select-wrap select {
-    width: 100%; padding: 10px 22px 10px 10px; border-radius: 20px;
-    border: 2px solid var(--pink-border); background: var(--white);
+    width: 100%; padding: 9px 18px 9px 8px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--pink-border); background: var(--white);
     font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 700;
     color: var(--text-body); -webkit-appearance: none; cursor: pointer;
+    box-shadow: var(--shadow);
   }
   .select-wrap::after {
-    content: '›'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%) rotate(90deg);
-    color: var(--pink-main); font-size: 16px; pointer-events: none;
+    content: '›'; position: absolute; right: 5px; top: 50%; transform: translateY(-50%) rotate(90deg);
+    color: var(--pink-main); font-size: 14px; pointer-events: none;
   }
   .text-input {
-    flex: 1; min-width: 0; padding: 10px 8px; border-radius: 20px;
-    border: 2px solid var(--pink-border); background: var(--white);
+    flex: 1; min-width: 0; padding: 9px 8px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--pink-border); background: var(--white);
     font-family: 'Noto Sans JP', sans-serif; font-size: 12px; color: var(--text-body);
+    box-shadow: var(--shadow);
   }
   .text-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
   .amount-input {
-    flex: 0 0 68px; min-width: 0; padding: 10px 6px; border-radius: 20px;
-    border: 2px solid var(--pink-border); background: var(--white);
+    flex: 0 0 120px; min-width: 0; padding: 9px 8px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--pink-border); background: var(--white);
     font-family: 'Noto Sans JP', sans-serif; font-size: 12px; color: var(--text-body);
-    text-align: right;
+    text-align: right; box-shadow: var(--shadow);
   }
   .amount-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
   .register-btn {
-    flex: 0 0 auto; padding: 10px 12px; border-radius: 20px; background: var(--pink-main);
+    flex: 0 0 auto; padding: 9px 12px; border-radius: 20px; background: var(--pink-main);
     color: white; font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 700;
     border: none; cursor: pointer; white-space: nowrap; transition: all 0.2s;
     box-shadow: 0 3px 10px rgba(240,81,138,0.35);
@@ -142,19 +155,24 @@
     background: var(--white); border-radius: var(--radius); overflow: hidden;
     box-shadow: var(--shadow); margin-bottom: 12px;
   }
+  .expense-table.scrollable {
+    max-height: 260px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
   .expense-row {
     display: flex; align-items: center; padding: 9px 12px;
-    border-bottom: 1px solid var(--pink-bg); gap: 8px;
+    border-bottom: 1px solid var(--pink-bg); gap: 6px;
     animation: slideIn 0.25s ease;
   }
   .expense-row:last-child { border-bottom: none; }
   @keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-  .row-date { font-size: 12px; color: #999; min-width: 28px; }
-  .row-tag { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
-  .row-item { flex: 1; font-size: 13px; color: var(--text-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .row-amount { font-size: 13px; font-weight: 700; color: var(--text-body); min-width: 60px; text-align: right; }
-  .row-del { width: 22px; height: 22px; border-radius: 50%; border: none; background: #ffe0ec; color: var(--pink-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .row-date { font-size: 12px; color: #999; min-width: 28px; flex-shrink: 0; }
+  .row-tag { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .row-item { flex: 1; font-size: 13px; color: var(--text-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .row-amount { font-size: 13px; font-weight: 700; color: var(--text-body); min-width: 52px; text-align: right; flex-shrink: 0; }
+  .row-del { width: 22px; height: 22px; border-radius: 50%; border: none; background: #ffe0ec; color: var(--pink-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
   .row-del:active { background: var(--pink-main); color: white; }
+  .row-edit { width: 22px; height: 22px; border-radius: 50%; border: none; background: #e8f0ff; color: #5a7ad4; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .row-edit:active { background: #5a7ad4; color: white; }
 
   /* ===== TOTAL BAR ===== */
   .total-bar {
@@ -180,8 +198,7 @@
   .tag-kotsu   { background: #cce8ff; color: #3a7ec9; }
   .tag-chokin  { background: #f0e0ff; color: #8a5ad4; }
   .tag-jo1     { background: #dde8ff; color: #5a7ad4; }
-  .tag-jo2     { background: #d8edff; color: #4a85c9; }
-  .tag-sonota  { background: #f9d0de; color: #d4537a; }
+    .tag-sonota  { background: #f9d0de; color: #d4537a; }
 
   /* ===== SETTINGS SCREEN ===== */
   .settings-title {
@@ -199,7 +216,7 @@
   .savings-columns { display: flex; gap: 12px; margin-top: 16px; }
   .savings-col { flex: 1; }
   .savings-col-title { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
-  .savings-table { background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .savings-table { background: var(--white); border-radius: var(--radius); overflow-y: auto; max-height: 380px; -webkit-overflow-scrolling: touch; box-shadow: var(--shadow); }
   .savings-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 10px; border-bottom: 1px solid var(--pink-bg);
@@ -225,15 +242,27 @@
   }
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   .dropdown-sheet h3 { font-size: 16px; font-weight: 900; color: var(--pink-main); margin-bottom: 14px; }
-  .filter-option {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 0; border-bottom: 1px solid var(--pink-bg);
-    cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-body);
-    transition: color 0.15s;
+  .edit-form { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .edit-form-row { display: flex; gap: 8px; align-items: center; }
+  .edit-select { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 13px; -webkit-appearance: none; }
+  .edit-text { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 13px; }
+  .edit-amount { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 13px; text-align: right; }
+  .edit-save-btn { width: 100%; padding: 12px; border-radius: 20px; background: var(--pink-main); color: white; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 3px 10px rgba(240,81,138,0.35); }
+  .filter-options-grid {
+    display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0;
   }
-  .filter-option:last-child { border-bottom: none; }
-  .filter-option.selected { color: var(--pink-main); font-weight: 700; }
-  .filter-option .check { color: var(--pink-main); font-size: 18px; }
+  .filter-option {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 20px;
+    cursor: pointer; font-size: 13px; font-weight: 700;
+    background: var(--pink-bg); color: var(--text-body);
+    border: 2px solid transparent; transition: all 0.15s;
+  }
+  .filter-option.selected {
+    background: var(--pink-main); color: white;
+    border-color: var(--pink-main);
+  }
+  .filter-option .check { font-size: 12px; }
 
   /* ===== PROGRESS BAR ===== */
   .progress-wrap { margin: 10px 0 16px; }
@@ -281,44 +310,29 @@
       <span class="month-num" id="month-num">3月</span>
       <span class="month-en" id="month-en">MARCH</span>
     </div>
-    <div style="display:flex;align-items:center;gap:6px;">
-      <button class="month-nav-btn" onclick="changeMonth(1)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-      <div class="header-icons">
-        <button class="header-icon-btn" onclick="showScreen('settings')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          設定
-        </button>
-        <button class="header-icon-btn" onclick="showScreen('savings')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
-          貯金
-        </button>
-      </div>
-    </div>
+    <button class="month-nav-btn" onclick="changeMonth(1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
   </div>
 
   <div class="field-group">
     <div class="field-label">今月の収入</div>
     <div class="field-row">
-      <input class="field-input" type="number" id="income-input" placeholder="0" oninput="recalc()" inputmode="numeric">
-      <span class="field-unit">円</span>
+      <div class="field-input-wrap"><input class="field-input" type="text" id="income-input" placeholder="0" oninput="formatIncomeInput(this);recalc()" inputmode="numeric"><span class="field-unit-inside">円</span></div>
     </div>
   </div>
 
   <div class="field-group">
     <div class="field-label">所持金</div>
     <div class="field-row">
-      <input class="field-input readonly" type="text" id="holdings-display" value="0" readonly>
-      <span class="field-unit">円</span>
+      <div class="field-input-wrap"><input class="field-input readonly" type="text" id="holdings-display" value="0" readonly><span class="field-unit-inside">円</span></div>
     </div>
   </div>
 
   <div class="field-group">
     <div class="field-label">残高</div>
     <div class="field-row">
-      <input class="field-input readonly" type="text" id="balance-display" value="0" readonly>
-      <span class="field-unit">円</span>
+      <div class="field-input-wrap"><input class="field-input readonly" type="text" id="balance-display" value="0" readonly><span class="field-unit-inside">円</span></div>
     </div>
   </div>
 
@@ -333,8 +347,7 @@
         <option value="交通費">交通費</option>
         <option value="貯金">貯金</option>
         <option value="JO1">JO1</option>
-        <option value="JO2">JO2</option>
-        <option value="その他">その他</option>
+                <option value="その他">その他</option>
       </select>
     </div>
     <input class="text-input" type="text" id="entry-item" placeholder="品目">
@@ -342,7 +355,7 @@
     <button class="register-btn" onclick="addExpense()">登録</button>
   </div>
 
-  <div class="expense-table" id="expense-list">
+  <div class="expense-table scrollable" id="expense-list">
     <div class="empty-state">支出がありません</div>
   </div>
 
@@ -375,8 +388,7 @@
           <option value="交通費">交通費</option>
           <option value="貯金">貯金</option>
           <option value="JO1">JO1</option>
-          <option value="JO2">JO2</option>
-          <option value="その他">その他</option>
+                    <option value="その他">その他</option>
         </select>
       </div>
       <input class="text-input" type="text" id="default-item" placeholder="品目">
@@ -391,16 +403,14 @@
   <div class="settings-section">
     <div class="field-label">1日の食費</div>
     <div class="field-row">
-      <input class="field-input" type="number" id="daily-food-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()">
-      <span class="field-unit">円</span>
+      <div class="field-input-wrap"><input class="field-input" type="number" id="daily-food-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
     </div>
   </div>
 
   <div class="settings-section">
     <div class="field-label">駐輪場</div>
     <div class="field-row">
-      <input class="field-input" type="number" id="parking-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()">
-      <span class="field-unit">円</span>
+      <div class="field-input-wrap"><input class="field-input" type="number" id="parking-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
     </div>
   </div>
 </div>
@@ -415,24 +425,21 @@
   <div class="field-group">
     <div class="field-label">現在の合計</div>
     <div class="field-row">
-      <input class="field-input readonly" type="text" id="savings-current" value="0" readonly>
-      <span class="field-unit">円</span>
+      <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-current" value="0" readonly><span class="field-unit-inside">円</span></div>
     </div>
   </div>
 
   <div class="field-group">
     <div class="field-label">予定の合計</div>
     <div class="field-row">
-      <input class="field-input readonly" type="text" id="savings-planned" value="0" readonly>
-      <span class="field-unit">円</span>
+      <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-planned" value="0" readonly><span class="field-unit-inside">円</span></div>
     </div>
   </div>
 
   <div class="field-group">
     <div class="field-label">目標金額</div>
     <div class="field-row">
-      <input class="field-input" type="number" id="savings-goal" placeholder="0" inputmode="numeric" oninput="saveSettings();renderSavings()">
-      <span class="field-unit">円</span>
+      <div class="field-input-wrap"><input class="field-input" type="number" id="savings-goal" placeholder="0" inputmode="numeric" oninput="saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
     </div>
     <div class="progress-wrap" id="savings-progress-wrap" style="display:none">
       <div class="progress-label">
@@ -475,7 +482,33 @@
 <div class="dropdown-overlay" id="filter-overlay" onclick="closeFilterSheet(event)">
   <div class="dropdown-sheet">
     <h3>カテゴリで絞り込み</h3>
-    <div id="filter-options"></div>
+    <div class="filter-options-grid" id="filter-options"></div>
+  </div>
+</div>
+
+<!-- EDIT SHEET -->
+<div class="dropdown-overlay" id="edit-overlay" onclick="closeEditSheet(event)">
+  <div class="dropdown-sheet">
+    <h3 id="edit-sheet-title">支出を編集</h3>
+    <div class="edit-form">
+      <div class="edit-form-row">
+        <select class="edit-select" id="edit-category">
+          <option value="食費">食費</option>
+          <option value="外食">外食</option>
+          <option value="交通費">交通費</option>
+          <option value="貯金">貯金</option>
+          <option value="JO1">JO1</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="edit-form-row">
+        <input class="edit-text" type="text" id="edit-item" placeholder="品目">
+      </div>
+      <div class="edit-form-row">
+        <input class="edit-amount" type="number" id="edit-amount" placeholder="金額" inputmode="numeric">
+      </div>
+      <button class="edit-save-btn" onclick="saveEdit()">保存</button>
+    </div>
   </div>
 </div>
 
@@ -489,22 +522,23 @@ const MONTHS_EN = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUG
 
 let state = {
   currentYear: 2026,
-  currentMonth: 3, // 1-indexed
+  currentMonth: 3,
   totalFilter: '全体',
-  data: {}, // key: "YYYY-MM" => { income, expenses: [{id,date,category,item,amount}] }
+  data: {}, // "YYYY-MM" => { income, expenses:[], overrides:{defId:{deleted,category,item,amount}} }
   settings: {
     dailyFood: 0,
     parking: 0,
     goal: 0,
-    defaults: [] // [{category,item,amount}]
+    defaults: [] // [{defId, category, item, amount}]
   }
 };
 
+// 編集中の対象
+let editTarget = null; // {type:'expense'|'default', index, defId}
+
 // ===== STORAGE =====
 function saveData() {
-  try {
-    localStorage.setItem('kakeibo_state', JSON.stringify(state));
-  } catch(e) {}
+  try { localStorage.setItem('kakeibo_state', JSON.stringify(state)); } catch(e) {}
 }
 function loadData() {
   try {
@@ -518,7 +552,10 @@ function loadData() {
 
 // ===== INIT =====
 loadData();
-// Set current month to today if within range
+// 既存データにdefIdがない場合は補完
+(state.settings.defaults || []).forEach((e, i) => {
+  if (!e.defId) e.defId = 'def_legacy_' + i;
+});
 const today = new Date();
 if (today.getFullYear() >= 2026 && today.getFullYear() <= 2030) {
   state.currentYear = today.getFullYear();
@@ -527,16 +564,32 @@ if (today.getFullYear() >= 2026 && today.getFullYear() <= 2030) {
 renderAll();
 
 // ===== MONTH KEY =====
-function monthKey(y, m) {
-  return `${y}-${String(m).padStart(2,'0')}`;
-}
-function getCurrentKey() {
-  return monthKey(state.currentYear, state.currentMonth);
-}
+function monthKey(y, m) { return `${y}-${String(m).padStart(2,'0')}`; }
+function getCurrentKey() { return monthKey(state.currentYear, state.currentMonth); }
 function getCurrentData() {
   const k = getCurrentKey();
-  if (!state.data[k]) state.data[k] = { income: 0, expenses: [] };
+  if (!state.data[k]) state.data[k] = { income: 0, expenses: [], overrides: {} };
+  if (!state.data[k].overrides) state.data[k].overrides = {};
   return state.data[k];
+}
+
+// ===== デフォルト支出の実効値を取得（月ごとのoverride込み）=====
+function getEffectiveDefault(defEntry, overrides) {
+  const ov = overrides[defEntry.defId];
+  if (!ov) return { ...defEntry };
+  if (ov.deleted) return null;
+  return { ...defEntry, ...ov };
+}
+
+// ===== 全支出（デフォルト＋月別）を取得 =====
+function getAllExpenses() {
+  const d = getCurrentData();
+  const overrides = d.overrides || {};
+  const effectiveDefaults = (state.settings.defaults || [])
+    .map(e => getEffectiveDefault(e, overrides))
+    .filter(Boolean)
+    .map(e => ({ ...e, isDefault: true }));
+  return [...effectiveDefaults, ...(d.expenses || [])];
 }
 
 // ===== MONTH NAVIGATION =====
@@ -545,7 +598,6 @@ function changeMonth(delta) {
   let y = state.currentYear;
   if (m > 12) { m = 1; y++; }
   if (m < 1)  { m = 12; y--; }
-  // clamp 2026/3 ~ 2030/12
   if (y < 2026 || (y === 2026 && m < 3)) return;
   if (y > 2030) return;
   state.currentYear = y;
@@ -568,23 +620,22 @@ function countWeekdays(year, month) {
 // ===== RECALC =====
 function recalc() {
   const d = getCurrentData();
-  const incomeVal = parseFloat(document.getElementById('income-input').value) || 0;
+  const incomeVal = parseFloat((document.getElementById('income-input').value || '').replace(/,/g, '')) || 0;
   d.income = incomeVal;
   saveData();
 
-  const expenses = d.expenses || [];
-  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+  const allExpenses = getAllExpenses();
+  const totalExpenses = allExpenses.reduce((s, e) => s + e.amount, 0);
   const holdings = incomeVal - totalExpenses;
 
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
   const dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
   const parking = parseFloat(document.getElementById('parking-input').value) || 0;
-  const nonFoodExpenses = expenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
+  const nonFoodExpenses = allExpenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
   const balance = incomeVal - (nonFoodExpenses + dailyFood * weekdays + parking * weekdays);
 
   document.getElementById('holdings-display').value = holdings.toLocaleString();
   document.getElementById('balance-display').value = balance.toLocaleString();
-
   renderTotalBar();
 }
 
@@ -592,7 +643,7 @@ function recalc() {
 function renderAll() {
   renderMonthHeader();
   const d = getCurrentData();
-  document.getElementById('income-input').value = d.income || '';
+  document.getElementById('income-input').value = d.income ? Number(d.income).toLocaleString() : '';
   document.getElementById('daily-food-input').value = state.settings.dailyFood || '';
   document.getElementById('parking-input').value = state.settings.parking || '';
   document.getElementById('savings-goal').value = state.settings.goal || '';
@@ -609,30 +660,48 @@ function renderMonthHeader() {
 
 // ===== TAG CLASS =====
 function tagClass(cat) {
-  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','JO1':'tag-jo1','JO2':'tag-jo2','その他':'tag-sonota' };
+  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','JO1':'tag-jo1','その他':'tag-sonota' };
   return map[cat] || 'tag-sonota';
 }
 
 // ===== EXPENSE LIST =====
 function renderExpenseList() {
   const d = getCurrentData();
+  const overrides = d.overrides || {};
   const expenses = d.expenses || [];
+  const defaults = state.settings.defaults || [];
   const list = document.getElementById('expense-list');
 
-  if (expenses.length === 0) {
+  const effectiveDefaults = defaults.map(e => getEffectiveDefault(e, overrides)).filter(Boolean);
+
+  if (effectiveDefaults.length === 0 && expenses.length === 0) {
     list.innerHTML = '<div class="empty-state">支出がありません</div>';
     return;
   }
 
-  list.innerHTML = expenses.map((e, i) => `
+  const defaultRows = effectiveDefaults.map(e => `
+    <div class="expense-row" style="background:#fdf8fb;">
+      <span class="row-date" style="font-size:10px;color:#ccc;min-width:28px;">毎月</span>
+      <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
+      <span class="row-item">${e.item}</span>
+      <span class="row-amount">${e.amount.toLocaleString()}円</span>
+      <button class="row-edit" onclick="openEditDefault('${e.defId}')">✎</button>
+      <button class="row-del" onclick="deleteDefaultForMonth('${e.defId}')">×</button>
+    </div>
+  `).join('');
+
+  const expenseRows = expenses.map((e, i) => `
     <div class="expense-row">
       <span class="row-date">${e.date}</span>
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
+      <button class="row-edit" onclick="openEditExpense(${i})">✎</button>
       <button class="row-del" onclick="deleteExpense(${i})">×</button>
     </div>
   `).join('');
+
+  list.innerHTML = defaultRows + expenseRows;
 }
 
 // ===== ADD EXPENSE =====
@@ -670,31 +739,95 @@ function deleteExpense(index) {
   renderSavings();
 }
 
+// ===== DELETE DEFAULT FOR THIS MONTH ONLY =====
+function deleteDefaultForMonth(defId) {
+  const d = getCurrentData();
+  d.overrides[defId] = { deleted: true };
+  saveData();
+  renderExpenseList();
+  recalc();
+  renderSavings();
+}
+
+// ===== EDIT SHEET =====
+function openEditExpense(index) {
+  const d = getCurrentData();
+  const e = d.expenses[index];
+  editTarget = { type: 'expense', index };
+  document.getElementById('edit-sheet-title').textContent = '支出を編集';
+  document.getElementById('edit-category').value = e.category;
+  document.getElementById('edit-item').value = e.item;
+  document.getElementById('edit-amount').value = e.amount;
+  document.getElementById('edit-overlay').classList.add('show');
+}
+
+function openEditDefault(defId) {
+  const d = getCurrentData();
+  const overrides = d.overrides || {};
+  const base = state.settings.defaults.find(e => e.defId === defId);
+  const effective = getEffectiveDefault(base, overrides);
+  editTarget = { type: 'default', defId };
+  document.getElementById('edit-sheet-title').textContent = '毎月の支出を編集（この月のみ）';
+  document.getElementById('edit-category').value = effective.category;
+  document.getElementById('edit-item').value = effective.item;
+  document.getElementById('edit-amount').value = effective.amount;
+  document.getElementById('edit-overlay').classList.add('show');
+}
+
+function saveEdit() {
+  const cat = document.getElementById('edit-category').value;
+  const item = document.getElementById('edit-item').value.trim();
+  const amount = parseFloat(document.getElementById('edit-amount').value);
+  if (!amount || amount <= 0) { showToast('金額を入力してください'); return; }
+
+  if (editTarget.type === 'expense') {
+    const d = getCurrentData();
+    const e = d.expenses[editTarget.index];
+    e.category = cat;
+    e.item = item || e.item;
+    e.amount = amount;
+  } else {
+    const d = getCurrentData();
+    d.overrides[editTarget.defId] = { category: cat, item: item || '品目', amount, deleted: false };
+  }
+
+  saveData();
+  document.getElementById('edit-overlay').classList.remove('show');
+  editTarget = null;
+  renderExpenseList();
+  recalc();
+  renderSavings();
+  showToast('更新しました！');
+}
+
+function closeEditSheet(e) {
+  if (e.target === document.getElementById('edit-overlay')) {
+    document.getElementById('edit-overlay').classList.remove('show');
+    editTarget = null;
+  }
+}
+
 // ===== TOTAL BAR =====
 function renderTotalBar() {
-  const d = getCurrentData();
-  const expenses = d.expenses || [];
+  const allExpenses = getAllExpenses();
   const filter = state.totalFilter;
-
   document.getElementById('total-filter-label').textContent = filter;
-
   let total = 0;
   if (filter === '全体') {
-    total = expenses.reduce((s, e) => s + e.amount, 0);
+    total = allExpenses.reduce((s, e) => s + e.amount, 0);
   } else {
-    total = expenses.filter(e => e.category === filter).reduce((s, e) => s + e.amount, 0);
+    total = allExpenses.filter(e => e.category === filter).reduce((s, e) => s + e.amount, 0);
   }
   document.getElementById('total-amount').textContent = total.toLocaleString();
 }
 
 // ===== FILTER SHEET =====
 function openFilterSheet() {
-  const categories = ['全体', '食費', '外食', '交通費', '貯金', 'JO1', 'JO2', 'その他'];
+  const categories = ['全体', '食費', '外食', '交通費', '貯金', 'JO1', 'その他'];
   const opts = document.getElementById('filter-options');
   opts.innerHTML = categories.map(c => `
     <div class="filter-option ${c === state.totalFilter ? 'selected' : ''}" onclick="selectFilter('${c}')">
-      ${c}
-      ${c === state.totalFilter ? '<span class="check">✓</span>' : ''}
+      ${c === state.totalFilter ? '<span class="check">✓</span>' : ''}${c}
     </div>
   `).join('');
   document.getElementById('filter-overlay').classList.add('show');
@@ -726,7 +859,8 @@ function addDefaultEntry() {
   if (!cat) { showToast('用途を選択してください'); return; }
   if (!amount || amount <= 0) { showToast('金額を入力してください'); return; }
 
-  state.settings.defaults.push({ category: cat, item: item || '品目', amount });
+  const defId = 'def_' + Date.now();
+  state.settings.defaults.push({ defId, category: cat, item: item || '品目', amount });
   saveData();
 
   document.getElementById('default-category').value = '';
@@ -734,13 +868,19 @@ function addDefaultEntry() {
   document.getElementById('default-amount').value = '';
 
   renderDefaultList();
-  showToast('追加しました！');
+  renderExpenseList();
+  recalc();
+  renderSavings();
+  showToast('全月の支出に追加しました！');
 }
 
 function deleteDefaultEntry(index) {
   state.settings.defaults.splice(index, 1);
   saveData();
   renderDefaultList();
+  renderExpenseList();
+  recalc();
+  renderSavings();
 }
 
 function renderDefaultList() {
@@ -762,26 +902,56 @@ function renderDefaultList() {
 
 // ===== SAVINGS =====
 function renderSavings() {
-  // Calc totals across all months
   let totalChokin = 0, totalJo1 = 0;
   let plannedChokin = 0, plannedJo1 = 0;
   const todayDate = new Date();
   const todayKey = monthKey(todayDate.getFullYear(), todayDate.getMonth() + 1);
 
-  Object.keys(state.data).forEach(k => {
-    const d = state.data[k];
-    if (!d.expenses) return;
-    d.expenses.forEach(e => {
-      if (e.category === '貯金') {
-        plannedChokin += e.amount;
-        if (k <= todayKey) totalChokin += e.amount;
-      }
-      if (e.category === 'JO1') {
-        plannedJo1 += e.amount;
-        if (k <= todayKey) totalJo1 += e.amount;
-      }
-    });
-  });
+  const defaults = state.settings.defaults || [];
+  const defaultChokin = defaults.filter(e => e.category === '貯金').reduce((s, e) => s + e.amount, 0);
+  const defaultJo1 = defaults.filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0);
+
+  let allMonthKeys = [];
+  for (let y = 2026; y <= 2030; y++) {
+    const startM = (y === 2026) ? 3 : 1;
+    for (let m = startM; m <= 12; m++) allMonthKeys.push(monthKey(y, m));
+  }
+
+  const chokinRows = [];
+  const jo1Rows = [];
+
+  for (let y = 2026; y <= 2030; y++) {
+    const startM = (y === 2026) ? 3 : 1;
+    for (let m = startM; m <= 12; m++) {
+      const k = monthKey(y, m);
+      const d = state.data[k];
+      const overrides = d ? (d.overrides || {}) : {};
+
+      // デフォルト分（override込み）
+      let defC = 0, defJ = 0;
+      defaults.forEach(e => {
+        const eff = getEffectiveDefault(e, overrides);
+        if (!eff) return;
+        if (eff.category === '貯金') defC += eff.amount;
+        if (eff.category === 'JO1') defJ += eff.amount;
+      });
+
+      // 月別個別支出分
+      const indivC = d ? (d.expenses || []).filter(e => e.category === '貯金').reduce((s, e) => s + e.amount, 0) : 0;
+      const indivJ = d ? (d.expenses || []).filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0) : 0;
+
+      const cAmt = defC + indivC;
+      const jAmt = defJ + indivJ;
+
+      plannedChokin += cAmt;
+      plannedJo1 += jAmt;
+      if (k <= todayKey) { totalChokin += cAmt; totalJo1 += jAmt; }
+
+      const isCurrent = (k === monthKey(state.currentYear, state.currentMonth));
+      chokinRows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: cAmt, isCurrent });
+      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, isCurrent });
+    }
+  }
 
   const currentTotal = totalChokin + totalJo1;
   const plannedTotal = plannedChokin + plannedJo1;
@@ -790,7 +960,6 @@ function renderSavings() {
   document.getElementById('savings-current').value = currentTotal.toLocaleString();
   document.getElementById('savings-planned').value = plannedTotal.toLocaleString();
 
-  // Progress
   if (goal > 0) {
     const pct = Math.min(100, Math.round(currentTotal / goal * 100));
     document.getElementById('savings-progress-wrap').style.display = 'block';
@@ -799,23 +968,6 @@ function renderSavings() {
     document.getElementById('progress-detail').textContent = `${currentTotal.toLocaleString()} / ${goal.toLocaleString()}円`;
   } else {
     document.getElementById('savings-progress-wrap').style.display = 'none';
-  }
-
-  // Build monthly rows 2025/10 ~ 2030/12
-  const chokinRows = [];
-  const jo1Rows = [];
-  for (let y = 2025; y <= 2030; y++) {
-    const startM = (y === 2025) ? 10 : 1;
-    const endM = 12;
-    for (let m = startM; m <= endM; m++) {
-      const k = monthKey(y, m);
-      const d = state.data[k];
-      const cAmt = d ? (d.expenses || []).filter(e => e.category === '貯金').reduce((s, e) => s + e.amount, 0) : 0;
-      const jAmt = d ? (d.expenses || []).filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0) : 0;
-      const isCurrent = (k === monthKey(state.currentYear, state.currentMonth));
-      chokinRows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: cAmt, isCurrent });
-      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, isCurrent });
-    }
   }
 
   const renderRows = (rows) => rows.map(r => `
@@ -836,6 +988,18 @@ function showScreen(name) {
   document.getElementById(`screen-${name}`).classList.add('active');
   document.getElementById(`nav-${name}`).classList.add('active');
   if (name === 'savings') renderSavings();
+}
+
+// ===== FORMAT INCOME INPUT =====
+function formatIncomeInput(el) {
+  const raw = el.value.replace(/,/g, '').replace(/[^0-9]/g, '');
+  if (raw === '') { el.value = ''; return; }
+  const num = parseInt(raw, 10);
+  const pos = el.selectionStart;
+  const oldLen = el.value.length;
+  el.value = num.toLocaleString();
+  const newLen = el.value.length;
+  el.setSelectionRange(pos + (newLen - oldLen), pos + (newLen - oldLen));
 }
 
 // ===== TOAST =====
