@@ -377,6 +377,19 @@
     <div class="empty-state">支出がありません</div>
   </div>
 
+  <div style="display:flex;gap:8px;margin-bottom:8px;">
+    <div class="total-bar" style="flex:1;padding:6px 12px;">
+      <span class="total-label" style="font-size:12px;">食費</span>
+      <span style="flex:1;text-align:right;font-size:15px;font-weight:900;color:var(--pink-main);" id="food-total">0</span>
+      <span class="total-unit" style="font-size:12px;">円</span>
+    </div>
+    <div class="total-bar" style="flex:1;padding:6px 12px;">
+      <span class="total-label" style="font-size:12px;">駐輪場</span>
+      <span style="flex:1;text-align:right;font-size:15px;font-weight:900;color:var(--pink-main);" id="parking-total">0</span>
+      <span class="total-unit" style="font-size:12px;">円</span>
+    </div>
+  </div>
+
   <div class="total-bar">
     <span class="total-label">合計</span>
     <button class="total-filter-btn" id="total-filter-btn" onclick="openFilterSheet()">
@@ -925,6 +938,15 @@ function renderTotalBar() {
     total = allExpenses.filter(e => e.category === filter).reduce((s, e) => s + e.amount, 0);
   }
   document.getElementById('total-amount').textContent = total.toLocaleString();
+
+  // 食費合計（登録済みの食費カテゴリ合計）
+  const foodTotal = allExpenses.filter(e => e.category === '食費').reduce((s, e) => s + e.amount, 0);
+  document.getElementById('food-total').textContent = foodTotal.toLocaleString();
+
+  // 駐輪場合計（平日数×駐輪場単価）
+  const weekdays = countWeekdays(state.currentYear, state.currentMonth);
+  const parkingRate = parseFloat(document.getElementById('parking-input').value) || 0;
+  document.getElementById('parking-total').textContent = (parkingRate * weekdays).toLocaleString();
 }
 
 // ===== FILTER SHEET =====
