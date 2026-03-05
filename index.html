@@ -69,6 +69,7 @@
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; color: var(--pink-main); transition: all 0.2s;
   }
+  .month-nav-btn svg { width: 24px; height: 24px; display: block; }
   .month-nav-btn:active { transform: scale(0.92); opacity: 0.6; }
   .month-title { text-align: center; flex: 1; }
   .month-title .month-num {
@@ -305,14 +306,14 @@
 <div id="screen-top" class="screen active">
   <div class="month-header">
     <button class="month-nav-btn" onclick="changeMonth(-1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="month-title">
       <span class="month-num" id="month-num">3月</span>
       <span class="month-en" id="month-en">MARCH</span>
     </div>
     <button class="month-nav-btn" onclick="changeMonth(1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
   </div>
 
