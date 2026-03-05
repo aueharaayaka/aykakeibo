@@ -369,7 +369,7 @@
       <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
     </div>
     <input class="text-input" type="text" id="entry-item" placeholder="品目" onkeydown="handleEntryEnter(event)">
-    <input class="amount-input" type="number" id="entry-amount" placeholder="金額" inputmode="numeric" onkeydown="handleEntryEnter(event)">
+    <input class="amount-input" type="text" id="entry-amount" placeholder="金額" inputmode="text" onkeydown="handleEntryEnter(event)">
     <button class="register-btn" onclick="addExpense()">登録</button>
   </div>
 
@@ -424,7 +424,7 @@
         <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </div>
       <input class="text-input" type="text" id="default-item" placeholder="品目" onkeydown="handleDefaultEnter(event)">
-      <input class="amount-input" type="number" id="default-amount" placeholder="金額" inputmode="numeric" onkeydown="handleDefaultEnter(event)">
+      <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="text" onkeydown="handleDefaultEnter(event)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
     <div class="expense-table scrollable" id="default-list">
@@ -573,7 +573,7 @@
         <input class="edit-text" type="text" id="edit-item" placeholder="品目">
       </div>
       <div class="edit-form-row">
-        <input class="edit-amount" type="number" id="edit-amount" placeholder="金額" inputmode="numeric">
+        <input class="edit-amount" type="text" id="edit-amount" placeholder="金額" inputmode="text">
       </div>
       <button class="edit-save-btn" onclick="saveEdit()">保存</button>
     </div>
@@ -797,7 +797,7 @@ function renderExpenseList() {
 function addExpense() {
   const cat = document.getElementById('entry-category').value;
   const item = document.getElementById('entry-item').value.trim();
-  const amount = parseFloat(document.getElementById('entry-amount').value);
+  const amount = parseFloat((document.getElementById('entry-amount').value || '').replace(/,/g, ''));
 
   if (!cat) { showToast('用途を選択してください'); return; }
   if (isNaN(amount)) { showToast('金額を入力してください'); return; }
@@ -896,7 +896,7 @@ function openEditDefault(defId) {
 function saveEdit() {
   const cat = document.getElementById('edit-category').value;
   const item = document.getElementById('edit-item').value.trim();
-  const amount = parseFloat(document.getElementById('edit-amount').value);
+  const amount = parseFloat((document.getElementById('edit-amount').value || '').replace(/,/g, ''));
   if (isNaN(amount)) { showToast('金額を入力してください'); return; }
 
   if (editTarget.type === 'expense') {
@@ -1035,7 +1035,7 @@ function removeVacation(index) {
 function addDefaultEntry() {
   const cat = document.getElementById('default-category').value;
   const item = document.getElementById('default-item').value.trim();
-  const amount = parseFloat(document.getElementById('default-amount').value);
+  const amount = parseFloat((document.getElementById('default-amount').value || '').replace(/,/g, ''));
 
   if (!cat) { showToast('用途を選択してください'); return; }
   if (isNaN(amount)) { showToast('金額を入力してください'); return; }
