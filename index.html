@@ -805,7 +805,7 @@ function addExpense() {
   const d = getCurrentData();
   const now = new Date();
   const date = `${state.currentMonth}/${now.getDate()}`;
-  d.expenses.push({ id: Date.now(), date, category: cat, item: item || '品目', amount });
+  d.expenses.push({ id: Date.now(), date, category: cat, item: item || '', amount });
   saveData();
 
   document.getElementById('entry-category').value = '';
@@ -907,7 +907,7 @@ function saveEdit() {
     e.amount = amount;
   } else {
     const d = getCurrentData();
-    d.overrides[editTarget.defId] = { category: cat, item: item || '品目', amount, deleted: false };
+    d.overrides[editTarget.defId] = { category: cat, item: item || '', amount, deleted: false };
   }
 
   saveData();
@@ -1041,7 +1041,7 @@ function addDefaultEntry() {
   if (isNaN(amount)) { showToast('金額を入力してください'); return; }
 
   const defId = 'def_' + Date.now();
-  state.settings.defaults.push({ defId, category: cat, item: item || '品目', amount });
+  state.settings.defaults.push({ defId, category: cat, item: item || '', amount });
   saveData();
 
   document.getElementById('default-category').value = '';
