@@ -439,17 +439,18 @@
     <button onclick="addVacation()" style="width:100%;padding:9px;border-radius:var(--radius-sm);border:1.5px dashed var(--pink-border);background:transparent;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;color:var(--pink-main);cursor:pointer;">＋ 休業日を追加</button>
   </div>
 
-  <div class="settings-section">
-    <div class="field-label">1日の食費</div>
-    <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input" type="number" id="daily-food-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
+  <div style="display:flex;gap:10px;">
+    <div class="settings-section" style="flex:1;min-width:0;">
+      <div class="field-label">1日の食費</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input" type="number" id="daily-food-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
+      </div>
     </div>
-  </div>
-
-  <div class="settings-section">
-    <div class="field-label">駐輪場</div>
-    <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input" type="number" id="parking-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
+    <div class="settings-section" style="flex:1;min-width:0;">
+      <div class="field-label">駐輪場</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input" type="number" id="parking-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
+      </div>
     </div>
   </div>
 </div>
