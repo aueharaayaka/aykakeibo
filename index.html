@@ -350,8 +350,8 @@
                 <option value="その他">その他</option>
       </select>
     </div>
-    <input class="text-input" type="text" id="entry-item" placeholder="品目">
-    <input class="amount-input" type="number" id="entry-amount" placeholder="金額" inputmode="numeric">
+    <input class="text-input" type="text" id="entry-item" placeholder="品目" onkeydown="handleEntryEnter(event)">
+    <input class="amount-input" type="number" id="entry-amount" placeholder="金額" inputmode="numeric" onkeydown="handleEntryEnter(event)">
     <button class="register-btn" onclick="addExpense()">登録</button>
   </div>
 
@@ -391,8 +391,8 @@
                     <option value="その他">その他</option>
         </select>
       </div>
-      <input class="text-input" type="text" id="default-item" placeholder="品目">
-      <input class="amount-input" type="number" id="default-amount" placeholder="金額" inputmode="numeric">
+      <input class="text-input" type="text" id="default-item" placeholder="品目" onkeydown="handleDefaultEnter(event)">
+      <input class="amount-input" type="number" id="default-amount" placeholder="金額" inputmode="numeric" onkeydown="handleDefaultEnter(event)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
     <div class="expense-table" id="default-list">
@@ -988,6 +988,14 @@ function showScreen(name) {
   document.getElementById(`screen-${name}`).classList.add('active');
   document.getElementById(`nav-${name}`).classList.add('active');
   if (name === 'savings') renderSavings();
+}
+
+// ===== ENTER KEY HANDLERS =====
+function handleEntryEnter(e) {
+  if (e.key === 'Enter') { e.preventDefault(); addExpense(); }
+}
+function handleDefaultEnter(e) {
+  if (e.key === 'Enter') { e.preventDefault(); addDefaultEntry(); }
 }
 
 // ===== FORMAT INCOME INPUT =====
