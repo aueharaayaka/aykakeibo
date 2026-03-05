@@ -770,7 +770,7 @@ function renderExpenseList() {
     <div class="expense-row" style="background:#fdf8fb;">
       <span class="row-date" style="font-size:10px;color:#ccc;min-width:28px;">毎月</span>
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
-      <span class="row-item">${e.item}</span>
+      <span class="row-item">${e.item || ''}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
       <button class="row-copy" onclick="duplicateDefault('${e.defId}')" title="複製">⊕</button>
       <button class="row-edit" onclick="openEditDefault('${e.defId}')">✎</button>
@@ -782,7 +782,7 @@ function renderExpenseList() {
     <div class="expense-row">
       <span class="row-date">${e.date}</span>
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
-      <span class="row-item">${e.item}</span>
+      <span class="row-item">${e.item || ''}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
       <button class="row-copy" onclick="duplicateExpense(${i})" title="複製">⊕</button>
       <button class="row-edit" onclick="openEditExpense(${i})">✎</button>
@@ -1086,7 +1086,7 @@ function renderDefaultList() {
   list.innerHTML = defaults.map((e, i) => `
     <div class="expense-row">
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
-      <span class="row-item">${e.item}</span>
+      <span class="row-item">${e.item || ''}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
       <button class="row-copy" onclick="duplicateDefaultEntry(${i})" title="複製">⊕</button>
       <button class="row-del" onclick="deleteDefaultEntry(${i})">×</button>
