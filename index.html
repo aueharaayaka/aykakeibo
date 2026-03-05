@@ -1298,6 +1298,29 @@ function formatIncomeInput(el) {
   el.setSelectionRange(pos + (newLen - oldLen), pos + (newLen - oldLen));
 }
 
+// ===== SWIPE =====
+(function() {
+  let startX = 0, startY = 0;
+  const THRESHOLD = 50;  // スワイプ判定の最小px
+  const ANGLE = 30;      // 横方向と判定する角度
+
+  document.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    // ホーム画面でのみ有効
+    if (!document.getElementById('screen-top').classList.contains('active')) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < THRESHOLD) return;
+    if (Math.abs(dy) > Math.abs(dx) * Math.tan(ANGLE * Math.PI / 180)) return;
+    if (dx < 0) changeMonth(1);  // 左スワイプ → 次の月
+    else changeMonth(-1);         // 右スワイプ → 前の月
+  }, { passive: true });
+})();
+
 // ===== TOAST =====
 let toastTimer;
 function showToast(msg) {
