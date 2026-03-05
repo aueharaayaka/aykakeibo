@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="家計簿">
+<title>家計簿</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink-bg: #fde8ef;
+    --pink-light: #fdf0f4;
+    --pink-main: #f0518a;
+    --pink-dark: #e8256e;
+    --pink-border: #f9c5d8;
+    --pink-mid: #f7a8c4;
+    --text-dark: #d41b6a;
+    --text-body: #333;
+    --white: #ffffff;
+    --shadow: 0 2px 8px rgba(240,81,138,0.12);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--pink-bg);
+    color: var(--text-body);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; padding: 20px 16px 100px; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: var(--white); border-top: 1px solid var(--pink-border);
+    display: flex; z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 4px; background: none; border: none; cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif; font-size: 10px;
+    color: var(--pink-mid); transition: color 0.2s;
+    gap: 3px;
+  }
+  .nav-btn.active { color: var(--pink-main); }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn span { font-size: 10px; font-weight: 500; }
+
+  /* ===== HEADER ===== */
+  .month-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .month-nav-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--white); border: 2px solid var(--pink-border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--pink-main); transition: all 0.2s;
+  }
+  .month-nav-btn:active { transform: scale(0.92); background: var(--pink-bg); }
+  .month-title { text-align: center; }
+  .month-title .month-num {
+    font-size: 28px; font-weight: 900; color: var(--pink-main); letter-spacing: -1px;
+  }
+  .month-title .month-en {
+    font-size: 13px; font-weight: 700; color: var(--pink-mid); letter-spacing: 2px; margin-left: 6px;
+  }
+
+  /* ===== CARDS ===== */
+  .field-group { margin-bottom: 14px; }
+  .field-label { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+  .field-row { display: flex; align-items: center; gap: 8px; }
+  .field-input {
+    flex: 1; background: var(--white); border: none; border-radius: var(--radius);
+    padding: 14px 16px; font-size: 20px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif;
+    text-align: right; color: var(--text-dark); box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+  }
+  .field-input:focus { outline: 2px solid var(--pink-main); }
+  .field-input.readonly { color: var(--pink-main); pointer-events: none; }
+  .field-unit { font-size: 14px; font-weight: 700; color: var(--text-dark); min-width: 16px; }
+
+  /* ===== SECTION TITLE ===== */
+  .section-title {
+    text-align: center; font-size: 16px; font-weight: 900;
+    color: var(--pink-main); margin: 18px 0 12px;
+  }
+
+  /* ===== ENTRY FORM ===== */
+  .entry-form {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 12px;
+  }
+  .select-wrap {
+    position: relative; flex: 0 0 100px;
+  }
+  .select-wrap select {
+    width: 100%; padding: 10px 28px 10px 12px; border-radius: 20px;
+    border: 2px solid var(--pink-border); background: var(--white);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 13px; font-weight: 700;
+    color: var(--text-body); -webkit-appearance: none; cursor: pointer;
+  }
+  .select-wrap::after {
+    content: '›'; position: absolute; right: 10px; top: 50%; transform: translateY(-50%) rotate(90deg);
+    color: var(--pink-main); font-size: 16px; pointer-events: none;
+  }
+  .text-input {
+    flex: 1; padding: 10px 12px; border-radius: 20px;
+    border: 2px solid var(--pink-border); background: var(--white);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 13px; color: var(--text-body);
+  }
+  .text-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
+  .amount-input {
+    flex: 0 0 80px; padding: 10px 10px; border-radius: 20px;
+    border: 2px solid var(--pink-border); background: var(--white);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 13px; color: var(--text-body);
+    text-align: right;
+  }
+  .amount-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
+  .register-btn {
+    padding: 10px 14px; border-radius: 20px; background: var(--pink-main);
+    color: white; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; font-weight: 700;
+    border: none; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    box-shadow: 0 3px 10px rgba(240,81,138,0.35);
+  }
+  .register-btn:active { transform: scale(0.95); }
+
+  /* ===== TABLE ===== */
+  .expense-table {
+    background: var(--white); border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow); margin-bottom: 12px;
+  }
+  .expense-row {
+    display: flex; align-items: center; padding: 9px 12px;
+    border-bottom: 1px solid var(--pink-bg); gap: 8px;
+    animation: slideIn 0.25s ease;
+  }
+  .expense-row:last-child { border-bottom: none; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .row-date { font-size: 12px; color: #999; min-width: 28px; }
+  .row-tag { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+  .row-item { flex: 1; font-size: 13px; color: var(--text-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-amount { font-size: 13px; font-weight: 700; color: var(--text-body); min-width: 60px; text-align: right; }
+  .row-del { width: 22px; height: 22px; border-radius: 50%; border: none; background: #ffe0ec; color: var(--pink-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .row-del:active { background: var(--pink-main); color: white; }
+
+  /* ===== TOTAL BAR ===== */
+  .total-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--white); border-radius: var(--radius);
+    padding: 12px 16px; box-shadow: var(--shadow);
+  }
+  .total-label { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+  .total-filter-btn {
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px 12px; border-radius: 20px;
+    background: var(--pink-bg); border: 2px solid var(--pink-border);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 700;
+    color: var(--text-dark); cursor: pointer; transition: all 0.2s;
+  }
+  .total-amount { flex: 1; text-align: right; font-size: 20px; font-weight: 900; color: var(--pink-main); }
+  .total-unit { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+
+  /* ===== CATEGORY TAGS ===== */
+  .tag-sonohe  { background: #f9d0de; color: #d4537a; }
+  .tag-shokuhi { background: #fde8b0; color: #c97d00; }
+  .tag-gaishoku { background: #d4f0e8; color: #3a9e7a; }
+  .tag-kotsu   { background: #cce8ff; color: #3a7ec9; }
+  .tag-chokin  { background: #f0e0ff; color: #8a5ad4; }
+  .tag-jo1     { background: #dde8ff; color: #5a7ad4; }
+  .tag-jo2     { background: #d8edff; color: #4a85c9; }
+  .tag-sonota  { background: #f9d0de; color: #d4537a; }
+
+  /* ===== SETTINGS SCREEN ===== */
+  .settings-title {
+    font-size: 24px; font-weight: 900; color: var(--pink-main); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .settings-section { margin-bottom: 20px; }
+  .settings-label { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
+
+  /* ===== SAVINGS SCREEN ===== */
+  .savings-title {
+    font-size: 24px; font-weight: 900; color: var(--pink-main); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .savings-columns { display: flex; gap: 12px; margin-top: 16px; }
+  .savings-col { flex: 1; }
+  .savings-col-title { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
+  .savings-table { background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .savings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-bottom: 1px solid var(--pink-bg);
+    font-size: 12px; font-weight: 500;
+  }
+  .savings-row:last-child { border-bottom: none; }
+  .savings-row .s-month { color: #999; }
+  .savings-row .s-amount { font-weight: 700; color: var(--text-dark); }
+  .savings-row.current-month { background: #fff0f5; }
+  .savings-row.current-month .s-amount { color: var(--pink-main); }
+
+  /* ===== DROPDOWN OVERLAY ===== */
+  .dropdown-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3); z-index: 200; display: none;
+    align-items: flex-end; justify-content: center;
+  }
+  .dropdown-overlay.show { display: flex; }
+  .dropdown-sheet {
+    background: var(--white); width: 100%; max-width: 430px;
+    border-radius: 20px 20px 0 0; padding: 20px 16px 40px;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .dropdown-sheet h3 { font-size: 16px; font-weight: 900; color: var(--pink-main); margin-bottom: 14px; }
+  .filter-option {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--pink-bg);
+    cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-body);
+    transition: color 0.15s;
+  }
+  .filter-option:last-child { border-bottom: none; }
+  .filter-option.selected { color: var(--pink-main); font-weight: 700; }
+  .filter-option .check { color: var(--pink-main); font-size: 18px; }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-wrap { margin: 10px 0 16px; }
+  .progress-label { font-size: 11px; color: #999; margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .progress-bar { height: 8px; background: var(--pink-border); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--pink-main), #ff85b3); border-radius: 4px; transition: width 0.6s ease; }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px);
+    background: var(--pink-main); color: white; padding: 10px 22px;
+    border-radius: 20px; font-size: 13px; font-weight: 700; z-index: 999;
+    box-shadow: 0 4px 16px rgba(240,81,138,0.4); transition: transform 0.3s ease;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state {
+    text-align: center; padding: 30px 0; color: var(--pink-mid);
+    font-size: 13px; font-weight: 500;
+  }
+
+  /* ===== HEADER ICONS ===== */
+  .header-icons { display: flex; gap: 16px; align-items: center; }
+  .header-icon-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: none; cursor: pointer; color: var(--pink-main);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 9px; font-weight: 700;
+    transition: opacity 0.2s;
+  }
+  .header-icon-btn:active { opacity: 0.7; }
+  .header-icon-btn svg { width: 24px; height: 24px; }
+</style>
+</head>
+<body>
+
+<!-- TOP SCREEN -->
+<div id="screen-top" class="screen active">
+  <div class="month-header">
+    <button class="month-nav-btn" onclick="changeMonth(-1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="month-title">
+      <span class="month-num" id="month-num">3月</span>
+      <span class="month-en" id="month-en">MARCH</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button class="month-nav-btn" onclick="changeMonth(1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="header-icons">
+        <button class="header-icon-btn" onclick="showScreen('settings')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          設定
+        </button>
+        <button class="header-icon-btn" onclick="showScreen('savings')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+          貯金
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">今月の収入</div>
+    <div class="field-row">
+      <input class="field-input" type="number" id="income-input" placeholder="0" oninput="recalc()" inputmode="numeric">
+      <span class="field-unit">円</span>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">所持金</div>
+    <div class="field-row">
+      <input class="field-input readonly" type="text" id="holdings-display" value="0" readonly>
+      <span class="field-unit">円</span>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">残高</div>
+    <div class="field-row">
+      <input class="field-input readonly" type="text" id="balance-display" value="0" readonly>
+      <span class="field-unit">円</span>
+    </div>
+  </div>
+
+  <div class="section-title">支出登録</div>
+
+  <div class="entry-form">
+    <div class="select-wrap">
+      <select id="entry-category">
+        <option value="">用途</option>
+        <option value="食費">食費</option>
+        <option value="外食">外食</option>
+        <option value="交通費">交通費</option>
+        <option value="貯金">貯金</option>
+        <option value="JO1">JO1</option>
+        <option value="JO2">JO2</option>
+        <option value="その他">その他</option>
+      </select>
+    </div>
+    <input class="text-input" type="text" id="entry-item" placeholder="品目">
+    <input class="amount-input" type="number" id="entry-amount" placeholder="金額" inputmode="numeric">
+    <button class="register-btn" onclick="addExpense()">登録</button>
+  </div>
+
+  <div class="expense-table" id="expense-list">
+    <div class="empty-state">支出がありません</div>
+  </div>
+
+  <div class="total-bar">
+    <span class="total-label">合計</span>
+    <button class="total-filter-btn" id="total-filter-btn" onclick="openFilterSheet()">
+      <span id="total-filter-label">全体</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <span class="total-amount" id="total-amount">0</span>
+    <span class="total-unit">円</span>
+  </div>
+</div>
+
+<!-- SETTINGS SCREEN -->
+<div id="screen-settings" class="screen">
+  <div class="settings-title">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-label">デフォルトの設定</div>
+    <div class="entry-form">
+      <div class="select-wrap">
+        <select id="default-category">
+          <option value="">用途</option>
+          <option value="食費">食費</option>
+          <option value="外食">外食</option>
+          <option value="交通費">交通費</option>
+          <option value="貯金">貯金</option>
+          <option value="JO1">JO1</option>
+          <option value="JO2">JO2</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <input class="text-input" type="text" id="default-item" placeholder="品目">
+      <input class="amount-input" type="number" id="default-amount" placeholder="金額" inputmode="numeric">
+      <button class="register-btn" onclick="addDefaultEntry()">登録</button>
+    </div>
+    <div class="expense-table" id="default-list">
+      <div class="empty-state">デフォルト支出がありません</div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="field-label">1日の食費</div>
+    <div class="field-row">
+      <input class="field-input" type="number" id="daily-food-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()">
+      <span class="field-unit">円</span>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="field-label">駐輪場</div>
+    <div class="field-row">
+      <input class="field-input" type="number" id="parking-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()">
+      <span class="field-unit">円</span>
+    </div>
+  </div>
+</div>
+
+<!-- SAVINGS SCREEN -->
+<div id="screen-savings" class="screen">
+  <div class="savings-title">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+    貯金
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">現在の合計</div>
+    <div class="field-row">
+      <input class="field-input readonly" type="text" id="savings-current" value="0" readonly>
+      <span class="field-unit">円</span>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">予定の合計</div>
+    <div class="field-row">
+      <input class="field-input readonly" type="text" id="savings-planned" value="0" readonly>
+      <span class="field-unit">円</span>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">目標金額</div>
+    <div class="field-row">
+      <input class="field-input" type="number" id="savings-goal" placeholder="0" inputmode="numeric" oninput="saveSettings();renderSavings()">
+      <span class="field-unit">円</span>
+    </div>
+    <div class="progress-wrap" id="savings-progress-wrap" style="display:none">
+      <div class="progress-label">
+        <span id="progress-pct">0%</span>
+        <span id="progress-detail"></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="savings-columns">
+    <div class="savings-col">
+      <div class="savings-col-title">貯金</div>
+      <div class="savings-table" id="savings-chokin-list"></div>
+    </div>
+    <div class="savings-col">
+      <div class="savings-col-title">JO1</div>
+      <div class="savings-table" id="savings-jo1-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-top" onclick="showScreen('top')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    <span>ホーム</span>
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>設定</span>
+  </button>
+  <button class="nav-btn" id="nav-savings" onclick="showScreen('savings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+    <span>貯金</span>
+  </button>
+</nav>
+
+<!-- FILTER SHEET -->
+<div class="dropdown-overlay" id="filter-overlay" onclick="closeFilterSheet(event)">
+  <div class="dropdown-sheet">
+    <h3>カテゴリで絞り込み</h3>
+    <div id="filter-options"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+const MONTHS_JP = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const MONTHS_EN = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+
+let state = {
+  currentYear: 2026,
+  currentMonth: 3, // 1-indexed
+  totalFilter: '全体',
+  data: {}, // key: "YYYY-MM" => { income, expenses: [{id,date,category,item,amount}] }
+  settings: {
+    dailyFood: 0,
+    parking: 0,
+    goal: 0,
+    defaults: [] // [{category,item,amount}]
+  }
+};
+
+// ===== STORAGE =====
+function saveData() {
+  try {
+    localStorage.setItem('kakeibo_state', JSON.stringify(state));
+  } catch(e) {}
+}
+function loadData() {
+  try {
+    const s = localStorage.getItem('kakeibo_state');
+    if (s) {
+      const parsed = JSON.parse(s);
+      state = { ...state, ...parsed };
+    }
+  } catch(e) {}
+}
+
+// ===== INIT =====
+loadData();
+// Set current month to today if within range
+const today = new Date();
+if (today.getFullYear() >= 2026 && today.getFullYear() <= 2030) {
+  state.currentYear = today.getFullYear();
+  state.currentMonth = today.getMonth() + 1;
+}
+renderAll();
+
+// ===== MONTH KEY =====
+function monthKey(y, m) {
+  return `${y}-${String(m).padStart(2,'0')}`;
+}
+function getCurrentKey() {
+  return monthKey(state.currentYear, state.currentMonth);
+}
+function getCurrentData() {
+  const k = getCurrentKey();
+  if (!state.data[k]) state.data[k] = { income: 0, expenses: [] };
+  return state.data[k];
+}
+
+// ===== MONTH NAVIGATION =====
+function changeMonth(delta) {
+  let m = state.currentMonth + delta;
+  let y = state.currentYear;
+  if (m > 12) { m = 1; y++; }
+  if (m < 1)  { m = 12; y--; }
+  // clamp 2026/3 ~ 2030/12
+  if (y < 2026 || (y === 2026 && m < 3)) return;
+  if (y > 2030) return;
+  state.currentYear = y;
+  state.currentMonth = m;
+  saveData();
+  renderAll();
+}
+
+// ===== WEEKDAY COUNT =====
+function countWeekdays(year, month) {
+  const days = new Date(year, month, 0).getDate();
+  let count = 0;
+  for (let d = 1; d <= days; d++) {
+    const dow = new Date(year, month - 1, d).getDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return count;
+}
+
+// ===== RECALC =====
+function recalc() {
+  const d = getCurrentData();
+  const incomeVal = parseFloat(document.getElementById('income-input').value) || 0;
+  d.income = incomeVal;
+  saveData();
+
+  const expenses = d.expenses || [];
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+  const holdings = incomeVal - totalExpenses;
+
+  const weekdays = countWeekdays(state.currentYear, state.currentMonth);
+  const dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
+  const parking = parseFloat(document.getElementById('parking-input').value) || 0;
+  const nonFoodExpenses = expenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
+  const balance = incomeVal - (nonFoodExpenses + dailyFood * weekdays + parking * weekdays);
+
+  document.getElementById('holdings-display').value = holdings.toLocaleString();
+  document.getElementById('balance-display').value = balance.toLocaleString();
+
+  renderTotalBar();
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  renderMonthHeader();
+  const d = getCurrentData();
+  document.getElementById('income-input').value = d.income || '';
+  document.getElementById('daily-food-input').value = state.settings.dailyFood || '';
+  document.getElementById('parking-input').value = state.settings.parking || '';
+  document.getElementById('savings-goal').value = state.settings.goal || '';
+  recalc();
+  renderExpenseList();
+  renderDefaultList();
+  renderSavings();
+}
+
+function renderMonthHeader() {
+  document.getElementById('month-num').textContent = `${state.currentMonth}月`;
+  document.getElementById('month-en').textContent = MONTHS_EN[state.currentMonth - 1];
+}
+
+// ===== TAG CLASS =====
+function tagClass(cat) {
+  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','JO1':'tag-jo1','JO2':'tag-jo2','その他':'tag-sonota' };
+  return map[cat] || 'tag-sonota';
+}
+
+// ===== EXPENSE LIST =====
+function renderExpenseList() {
+  const d = getCurrentData();
+  const expenses = d.expenses || [];
+  const list = document.getElementById('expense-list');
+
+  if (expenses.length === 0) {
+    list.innerHTML = '<div class="empty-state">支出がありません</div>';
+    return;
+  }
+
+  list.innerHTML = expenses.map((e, i) => `
+    <div class="expense-row">
+      <span class="row-date">${e.date}</span>
+      <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
+      <span class="row-item">${e.item}</span>
+      <span class="row-amount">${e.amount.toLocaleString()}円</span>
+      <button class="row-del" onclick="deleteExpense(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+// ===== ADD EXPENSE =====
+function addExpense() {
+  const cat = document.getElementById('entry-category').value;
+  const item = document.getElementById('entry-item').value.trim();
+  const amount = parseFloat(document.getElementById('entry-amount').value);
+
+  if (!cat) { showToast('用途を選択してください'); return; }
+  if (!amount || amount <= 0) { showToast('金額を入力してください'); return; }
+
+  const d = getCurrentData();
+  const now = new Date();
+  const date = `${state.currentMonth}/${now.getDate()}`;
+  d.expenses.push({ id: Date.now(), date, category: cat, item: item || '品目', amount });
+  saveData();
+
+  document.getElementById('entry-category').value = '';
+  document.getElementById('entry-item').value = '';
+  document.getElementById('entry-amount').value = '';
+
+  renderExpenseList();
+  recalc();
+  renderSavings();
+  showToast('登録しました！');
+}
+
+// ===== DELETE EXPENSE =====
+function deleteExpense(index) {
+  const d = getCurrentData();
+  d.expenses.splice(index, 1);
+  saveData();
+  renderExpenseList();
+  recalc();
+  renderSavings();
+}
+
+// ===== TOTAL BAR =====
+function renderTotalBar() {
+  const d = getCurrentData();
+  const expenses = d.expenses || [];
+  const filter = state.totalFilter;
+
+  document.getElementById('total-filter-label').textContent = filter;
+
+  let total = 0;
+  if (filter === '全体') {
+    total = expenses.reduce((s, e) => s + e.amount, 0);
+  } else {
+    total = expenses.filter(e => e.category === filter).reduce((s, e) => s + e.amount, 0);
+  }
+  document.getElementById('total-amount').textContent = total.toLocaleString();
+}
+
+// ===== FILTER SHEET =====
+function openFilterSheet() {
+  const categories = ['全体', '食費', '外食', '交通費', '貯金', 'JO1', 'JO2', 'その他'];
+  const opts = document.getElementById('filter-options');
+  opts.innerHTML = categories.map(c => `
+    <div class="filter-option ${c === state.totalFilter ? 'selected' : ''}" onclick="selectFilter('${c}')">
+      ${c}
+      ${c === state.totalFilter ? '<span class="check">✓</span>' : ''}
+    </div>
+  `).join('');
+  document.getElementById('filter-overlay').classList.add('show');
+}
+function closeFilterSheet(e) {
+  if (e.target === document.getElementById('filter-overlay')) {
+    document.getElementById('filter-overlay').classList.remove('show');
+  }
+}
+function selectFilter(cat) {
+  state.totalFilter = cat;
+  document.getElementById('filter-overlay').classList.remove('show');
+  renderTotalBar();
+}
+
+// ===== SETTINGS =====
+function saveSettings() {
+  state.settings.dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
+  state.settings.parking = parseFloat(document.getElementById('parking-input').value) || 0;
+  state.settings.goal = parseFloat(document.getElementById('savings-goal').value) || 0;
+  saveData();
+}
+
+function addDefaultEntry() {
+  const cat = document.getElementById('default-category').value;
+  const item = document.getElementById('default-item').value.trim();
+  const amount = parseFloat(document.getElementById('default-amount').value);
+
+  if (!cat) { showToast('用途を選択してください'); return; }
+  if (!amount || amount <= 0) { showToast('金額を入力してください'); return; }
+
+  state.settings.defaults.push({ category: cat, item: item || '品目', amount });
+  saveData();
+
+  document.getElementById('default-category').value = '';
+  document.getElementById('default-item').value = '';
+  document.getElementById('default-amount').value = '';
+
+  renderDefaultList();
+  showToast('追加しました！');
+}
+
+function deleteDefaultEntry(index) {
+  state.settings.defaults.splice(index, 1);
+  saveData();
+  renderDefaultList();
+}
+
+function renderDefaultList() {
+  const defaults = state.settings.defaults || [];
+  const list = document.getElementById('default-list');
+  if (defaults.length === 0) {
+    list.innerHTML = '<div class="empty-state">デフォルト支出がありません</div>';
+    return;
+  }
+  list.innerHTML = defaults.map((e, i) => `
+    <div class="expense-row">
+      <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
+      <span class="row-item">${e.item}</span>
+      <span class="row-amount">${e.amount.toLocaleString()}円</span>
+      <button class="row-del" onclick="deleteDefaultEntry(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+// ===== SAVINGS =====
+function renderSavings() {
+  // Calc totals across all months
+  let totalChokin = 0, totalJo1 = 0;
+  let plannedChokin = 0, plannedJo1 = 0;
+  const todayDate = new Date();
+  const todayKey = monthKey(todayDate.getFullYear(), todayDate.getMonth() + 1);
+
+  Object.keys(state.data).forEach(k => {
+    const d = state.data[k];
+    if (!d.expenses) return;
+    d.expenses.forEach(e => {
+      if (e.category === '貯金') {
+        plannedChokin += e.amount;
+        if (k <= todayKey) totalChokin += e.amount;
+      }
+      if (e.category === 'JO1') {
+        plannedJo1 += e.amount;
+        if (k <= todayKey) totalJo1 += e.amount;
+      }
+    });
+  });
+
+  const currentTotal = totalChokin + totalJo1;
+  const plannedTotal = plannedChokin + plannedJo1;
+  const goal = state.settings.goal || 0;
+
+  document.getElementById('savings-current').value = currentTotal.toLocaleString();
+  document.getElementById('savings-planned').value = plannedTotal.toLocaleString();
+
+  // Progress
+  if (goal > 0) {
+    const pct = Math.min(100, Math.round(currentTotal / goal * 100));
+    document.getElementById('savings-progress-wrap').style.display = 'block';
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+    document.getElementById('progress-detail').textContent = `${currentTotal.toLocaleString()} / ${goal.toLocaleString()}円`;
+  } else {
+    document.getElementById('savings-progress-wrap').style.display = 'none';
+  }
+
+  // Build monthly rows 2025/10 ~ 2030/12
+  const chokinRows = [];
+  const jo1Rows = [];
+  for (let y = 2025; y <= 2030; y++) {
+    const startM = (y === 2025) ? 10 : 1;
+    const endM = 12;
+    for (let m = startM; m <= endM; m++) {
+      const k = monthKey(y, m);
+      const d = state.data[k];
+      const cAmt = d ? (d.expenses || []).filter(e => e.category === '貯金').reduce((s, e) => s + e.amount, 0) : 0;
+      const jAmt = d ? (d.expenses || []).filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0) : 0;
+      const isCurrent = (k === monthKey(state.currentYear, state.currentMonth));
+      chokinRows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: cAmt, isCurrent });
+      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, isCurrent });
+    }
+  }
+
+  const renderRows = (rows) => rows.map(r => `
+    <div class="savings-row ${r.isCurrent ? 'current-month' : ''}">
+      <span class="s-month">${r.label}</span>
+      <span class="s-amount">${r.amount.toLocaleString()}円</span>
+    </div>
+  `).join('');
+
+  document.getElementById('savings-chokin-list').innerHTML = renderRows(chokinRows);
+  document.getElementById('savings-jo1-list').innerHTML = renderRows(jo1Rows);
+}
+
+// ===== SCREEN NAV =====
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+  document.getElementById(`nav-${name}`).classList.add('active');
+  if (name === 'savings') renderSavings();
+}
+
+// ===== TOAST =====
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>
