@@ -106,6 +106,12 @@
   }
   .field-unit { display: none; }
 
+  /* ===== MONTH SLIDE ANIMATION ===== */
+  @keyframes slideInFromRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes slideInFromLeft  { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+  .slide-in-right { animation: slideInFromRight 0.45s ease; }
+  .slide-in-left  { animation: slideInFromLeft  0.45s ease; }
+
   /* ===== SECTION TITLE ===== */
   .section-title {
     text-align: center; font-size: 16px; font-weight: 900;
@@ -683,6 +689,12 @@ function changeMonth(delta) {
   state.currentMonth = m;
   saveData();
   renderAll();
+  // アニメーション：次月は右から、前月は左から
+  const screen = document.getElementById('screen-top');
+  const cls = delta > 0 ? 'slide-in-right' : 'slide-in-left';
+  screen.classList.remove('slide-in-right', 'slide-in-left');
+  void screen.offsetWidth; // reflow
+  screen.classList.add(cls);
 }
 
 // ===== WEEKDAY COUNT =====
