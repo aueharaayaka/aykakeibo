@@ -939,12 +939,10 @@ function renderTotalBar() {
   }
   document.getElementById('total-amount').textContent = total.toLocaleString();
 
-  // 食費合計（登録済みの食費カテゴリ合計）
-  const foodTotal = allExpenses.filter(e => e.category === '食費').reduce((s, e) => s + e.amount, 0);
-  document.getElementById('food-total').textContent = foodTotal.toLocaleString();
-
-  // 駐輪場合計（平日数×駐輪場単価）
+  // 平日数・食費・駐輪場合計
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
+  const dailyFoodRate = parseFloat(document.getElementById('daily-food-input').value) || 0;
+  document.getElementById('food-total').textContent = (dailyFoodRate * weekdays).toLocaleString();
   const parkingRate = parseFloat(document.getElementById('parking-input').value) || 0;
   document.getElementById('parking-total').textContent = (parkingRate * weekdays).toLocaleString();
 }
