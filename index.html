@@ -422,17 +422,33 @@
     貯金
   </div>
 
-  <div class="field-group">
-    <div class="field-label">現在の合計</div>
-    <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-current" value="0" readonly><span class="field-unit-inside">円</span></div>
+  <div style="display:flex;gap:10px;">
+    <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">貯金 現在の合計</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-chokin-current" value="0" readonly><span class="field-unit-inside">円</span></div>
+      </div>
+    </div>
+    <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">JO1 現在の合計</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-jo1-current" value="0" readonly><span class="field-unit-inside">円</span></div>
+      </div>
     </div>
   </div>
 
-  <div class="field-group">
-    <div class="field-label">予定の合計</div>
-    <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-planned" value="0" readonly><span class="field-unit-inside">円</span></div>
+  <div style="display:flex;gap:10px;">
+    <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">貯金 予定の合計</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-chokin-planned" value="0" readonly><span class="field-unit-inside">円</span></div>
+      </div>
+    </div>
+    <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">JO1 予定の合計</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-jo1-planned" value="0" readonly><span class="field-unit-inside">円</span></div>
+      </div>
     </div>
   </div>
 
@@ -957,15 +973,17 @@ function renderSavings() {
   const plannedTotal = plannedChokin + plannedJo1;
   const goal = state.settings.goal || 0;
 
-  document.getElementById('savings-current').value = currentTotal.toLocaleString();
-  document.getElementById('savings-planned').value = plannedTotal.toLocaleString();
+  document.getElementById('savings-chokin-current').value = totalChokin.toLocaleString();
+  document.getElementById('savings-jo1-current').value = totalJo1.toLocaleString();
+  document.getElementById('savings-chokin-planned').value = plannedChokin.toLocaleString();
+  document.getElementById('savings-jo1-planned').value = plannedJo1.toLocaleString();
 
   if (goal > 0) {
-    const pct = Math.min(100, Math.round(currentTotal / goal * 100));
+    const pct = Math.min(100, Math.round(totalChokin / goal * 100));
     document.getElementById('savings-progress-wrap').style.display = 'block';
     document.getElementById('progress-fill').style.width = pct + '%';
     document.getElementById('progress-pct').textContent = pct + '%';
-    document.getElementById('progress-detail').textContent = `${currentTotal.toLocaleString()} / ${goal.toLocaleString()}円`;
+    document.getElementById('progress-detail').textContent = `${totalChokin.toLocaleString()} / ${goal.toLocaleString()}円`;
   } else {
     document.getElementById('savings-progress-wrap').style.display = 'none';
   }
