@@ -81,16 +81,16 @@
   /* ===== CARDS ===== */
   .field-group { margin-bottom: 14px; }
   .field-label { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
-  .field-row { display: flex; align-items: center; gap: 8px; }
+  .field-row { display: flex; align-items: center; gap: 6px; width: 100%; }
   .field-input {
-    flex: 1; background: var(--white); border: none; border-radius: var(--radius);
+    flex: 1; min-width: 0; background: var(--white); border: none; border-radius: var(--radius);
     padding: 14px 16px; font-size: 20px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif;
     text-align: right; color: var(--text-dark); box-shadow: var(--shadow);
     transition: box-shadow 0.2s;
   }
   .field-input:focus { outline: 2px solid var(--pink-main); }
   .field-input.readonly { color: var(--pink-main); pointer-events: none; }
-  .field-unit { font-size: 14px; font-weight: 700; color: var(--text-dark); min-width: 16px; }
+  .field-unit { font-size: 14px; font-weight: 700; color: var(--text-dark); flex-shrink: 0; width: 16px; }
 
   /* ===== SECTION TITLE ===== */
   .section-title {
