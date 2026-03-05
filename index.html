@@ -205,6 +205,18 @@
   .tag-jo1     { background: #dde8ff; color: #5a7ad4; }
     .tag-sonota  { background: #f9d0de; color: #d4537a; }
 
+  /* ===== VACATION ===== */
+  .vacation-row {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+    background: var(--white); border-radius: var(--radius-sm);
+    padding: 8px 10px; box-shadow: var(--shadow);
+  }
+  .vacation-date {
+    flex: 1; border: none; background: transparent; font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px; color: var(--text-body); min-width: 0;
+  }
+  .vacation-sep { font-size: 12px; color: #aaa; flex-shrink: 0; }
+
   /* ===== SETTINGS SCREEN ===== */
   .settings-title {
     font-size: 24px; font-weight: 900; color: var(--pink-main); margin-bottom: 16px;
@@ -408,6 +420,12 @@
   </div>
 
   <div class="settings-section">
+    <div class="field-label">休業期間 <span style="font-size:10px;font-weight:400;color:#aaa;">（祝日は自動除外されます）</span></div>
+    <div id="vacation-list" style="margin-bottom:8px;"></div>
+    <button onclick="addVacation()" style="width:100%;padding:9px;border-radius:var(--radius-sm);border:1.5px dashed var(--pink-border);background:transparent;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;color:var(--pink-main);cursor:pointer;">＋ 休業日を追加</button>
+  </div>
+
+  <div class="settings-section">
     <div class="field-label">1日の食費</div>
     <div class="field-row">
       <div class="field-input-wrap"><input class="field-input" type="number" id="daily-food-input" placeholder="0" inputmode="numeric" oninput="saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
@@ -566,7 +584,8 @@ let state = {
     dailyFood: 0,
     parking: 0,
     goal: 0,
-    defaults: [] // [{defId, category, item, amount}]
+    defaults: [], // [{defId, category, item, amount}]
+    vacations: [] // [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
   }
 };
 
@@ -594,9 +613,15 @@ loadData();
   if (!e.defId) e.defId = 'def_legacy_' + i;
 });
 const today = new Date();
-if (today.getFullYear() >= 2026 && today.getFullYear() <= 2030) {
-  state.currentYear = today.getFullYear();
-  state.currentMonth = today.getMonth() + 1;
+// 常に今月を開く
+state.currentYear = today.getFullYear();
+state.currentMonth = today.getMonth() + 1;
+// 範囲外の場合はクランプ
+if (state.currentYear < 2026 || (state.currentYear === 2026 && state.currentMonth < 3)) {
+  state.currentYear = 2026; state.currentMonth = 3;
+}
+if (state.currentYear > 2030) {
+  state.currentYear = 2030; state.currentMonth = 12;
 }
 renderAll();
 
@@ -644,12 +669,24 @@ function changeMonth(delta) {
 }
 
 // ===== WEEKDAY COUNT =====
+// 日本の祝日 2026〜2030
+const JAPAN_HOLIDAYS = new Set(["2026-01-01","2026-01-12","2026-02-11","2026-02-23","2026-03-27","2026-04-29","2026-05-03","2026-05-04","2026-05-05","2026-07-20","2026-08-11","2026-09-21","2026-09-29","2026-10-12","2026-11-03","2026-11-23","2027-01-01","2027-01-11","2027-02-11","2027-02-23","2027-03-27","2027-04-29","2027-05-03","2027-05-04","2027-05-05","2027-07-19","2027-08-11","2027-09-20","2027-09-29","2027-10-11","2027-11-03","2027-11-23","2028-01-01","2028-01-10","2028-02-11","2028-02-23","2028-03-27","2028-04-29","2028-05-03","2028-05-04","2028-05-05","2028-07-17","2028-08-11","2028-09-18","2028-09-30","2028-10-09","2028-11-03","2028-11-23","2029-01-01","2029-01-08","2029-02-11","2029-02-12","2029-02-23","2029-03-27","2029-04-29","2029-04-30","2029-05-03","2029-05-04","2029-05-05","2029-07-16","2029-08-11","2029-09-17","2029-09-30","2029-10-01","2029-10-08","2029-11-03","2029-11-23","2030-01-01","2030-01-14","2030-02-11","2030-02-23","2030-03-28","2030-04-29","2030-05-03","2030-05-04","2030-05-05","2030-05-06","2030-07-15","2030-08-11","2030-08-12","2030-09-16","2030-09-30","2030-10-14","2030-11-03","2030-11-04","2030-11-23"]);
+
+function isVacationDay(dateStr) {
+  const vacations = state.settings.vacations || [];
+  return vacations.some(v => v.from <= dateStr && dateStr <= v.to);
+}
+
 function countWeekdays(year, month) {
   const days = new Date(year, month, 0).getDate();
   let count = 0;
   for (let d = 1; d <= days; d++) {
     const dow = new Date(year, month - 1, d).getDay();
-    if (dow !== 0 && dow !== 6) count++;
+    if (dow === 0 || dow === 6) continue; // 土日除外
+    const key = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (JAPAN_HOLIDAYS.has(key)) continue; // 祝日除外
+    if (isVacationDay(key)) continue; // 休業日除外
+    count++;
   }
   return count;
 }
@@ -687,6 +724,7 @@ function renderAll() {
   recalc();
   renderExpenseList();
   renderDefaultList();
+  renderVacationList();
   renderSavings();
 }
 
@@ -918,6 +956,61 @@ function saveSettings() {
   state.settings.parking = parseFloat(document.getElementById('parking-input').value) || 0;
   state.settings.goal = parseFloat(document.getElementById('savings-goal').value) || 0;
   saveData();
+}
+
+// ===== VACATION =====
+function getVacationYearRange() {
+  const now = new Date();
+  const y = now.getFullYear();
+  return { min: `${y}-01-01`, max: `${y+1}-12-31` };
+}
+
+function renderVacationList() {
+  const vacations = state.settings.vacations || [];
+  const { min, max } = getVacationYearRange();
+  const list = document.getElementById('vacation-list');
+  if (!list) return;
+  if (vacations.length === 0) {
+    list.innerHTML = '';
+    return;
+  }
+  list.innerHTML = vacations.map((v, i) => `
+    <div class="vacation-row">
+      <input class="vacation-date" type="date" value="${v.from}" min="${min}" max="${max}"
+        onchange="updateVacation(${i},'from',this.value)">
+      <span class="vacation-sep">〜</span>
+      <input class="vacation-date" type="date" value="${v.to}" min="${min}" max="${max}"
+        onchange="updateVacation(${i},'to',this.value)">
+      <button class="row-del" onclick="removeVacation(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function addVacation() {
+  const { min, max } = getVacationYearRange();
+  const now = new Date();
+  const from = now.toISOString().slice(0,10);
+  if (!state.settings.vacations) state.settings.vacations = [];
+  state.settings.vacations.push({ from, to: from });
+  saveData();
+  renderVacationList();
+  recalc();
+}
+
+function updateVacation(index, field, value) {
+  state.settings.vacations[index][field] = value;
+  // fromがtoより後になったら揃える
+  const v = state.settings.vacations[index];
+  if (v.from > v.to) state.settings.vacations[index].to = v.from;
+  saveData();
+  recalc();
+}
+
+function removeVacation(index) {
+  state.settings.vacations.splice(index, 1);
+  saveData();
+  renderVacationList();
+  recalc();
 }
 
 function addDefaultEntry() {
