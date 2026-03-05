@@ -512,11 +512,15 @@
 <!-- BACKUP SHEET -->
 <div class="dropdown-overlay" id="backup-overlay" onclick="closeBackupSheet(event)">
   <div class="dropdown-sheet">
-    <h3>バックアップ / 復元</h3>
-    <p style="font-size:12px;color:#999;margin-bottom:16px;">ブラウザが変わってもデータを引き継ぐにはバックアップファイルを保存してください。</p>
-    <button class="edit-save-btn" onclick="exportData()" style="margin-bottom:10px;">📥 バックアップを保存</button>
-    <label class="edit-save-btn" style="display:block;text-align:center;cursor:pointer;background:var(--pink-bg);color:var(--text-dark);box-shadow:none;border:2px solid var(--pink-border);">
-      📤 バックアップから復元
+    <h3>データ同期</h3>
+    <p style="font-size:12px;color:#999;margin-bottom:16px;">Googleスプレッドシートを経由してPC・スマホ間でデータを同期できます。</p>
+    <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存（このデバイス→クラウド）</button>
+    <button class="edit-save-btn" onclick="syncDownload()" style="margin-bottom:10px;background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む（クラウド→このデバイス）</button>
+    <div style="border-top:1px solid var(--pink-bg);margin:12px 0;"></div>
+    <p style="font-size:11px;color:#bbb;margin-bottom:8px;">ファイルでバックアップ</p>
+    <button class="edit-save-btn" onclick="exportData()" style="margin-bottom:10px;background:var(--pink-bg);color:var(--text-dark);box-shadow:none;border:2px solid var(--pink-border);font-size:12px;">📥 ファイルに保存</button>
+    <label class="edit-save-btn" style="display:block;text-align:center;cursor:pointer;background:var(--pink-bg);color:var(--text-dark);box-shadow:none;border:2px solid var(--pink-border);font-size:12px;">
+      📤 ファイルから復元
       <input type="file" accept=".json" onchange="importData(event)" style="display:none;">
     </label>
   </div>
@@ -1074,6 +1078,8 @@ function showScreen(name) {
 }
 
 // ===== BACKUP / RESTORE =====
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwtn5f3pk22UzssoHefVi1PayUg2ti6liFs5kNYqZm_4dyv6ciI3OgkKxg7f-A6XQjB/exec';
+
 function showBackupSheet() {
   document.getElementById('backup-overlay').classList.add('show');
 }
@@ -1082,6 +1088,47 @@ function closeBackupSheet(e) {
     document.getElementById('backup-overlay').classList.remove('show');
   }
 }
+
+// クラウドに保存
+async function syncUpload() {
+  try {
+    showToast('保存中...');
+    const json = JSON.stringify(state);
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: json
+    });
+    showToast('クラウドに保存しました！');
+    document.getElementById('backup-overlay').classList.remove('show');
+  } catch(e) {
+    showToast('保存に失敗しました');
+  }
+}
+
+// クラウドから読み込む
+async function syncDownload() {
+  try {
+    showToast('読み込み中...');
+    const res = await fetch(GAS_URL + '?t=' + Date.now());
+    const text = await res.text();
+    if (!text || text === '{}') {
+      showToast('クラウドにデータがありません');
+      return;
+    }
+    const parsed = JSON.parse(text);
+    state = { ...state, ...parsed };
+    saveData();
+    renderAll();
+    document.getElementById('backup-overlay').classList.remove('show');
+    showToast('読み込みました！');
+  } catch(e) {
+    showToast('読み込みに失敗しました');
+  }
+}
+
+// ファイルに保存
 function exportData() {
   const json = JSON.stringify(state, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
@@ -1093,6 +1140,8 @@ function exportData() {
   URL.revokeObjectURL(url);
   showToast('バックアップを保存しました！');
 }
+
+// ファイルから復元
 function importData(e) {
   const file = e.target.files[0];
   if (!file) return;
