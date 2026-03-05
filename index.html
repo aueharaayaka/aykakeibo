@@ -79,7 +79,7 @@
     font-size: 26px; font-weight: 900; color: var(--pink-main); letter-spacing: -1px;
   }
   .month-title .month-en {
-    font-size: 12px; font-weight: 700; color: var(--pink-mid); letter-spacing: 2px; margin-left: 4px;
+    display: none;
   }
 
   /* ===== CARDS ===== */
@@ -326,7 +326,7 @@
     </button>
     <div class="month-title">
       <span class="month-num" id="month-num">3月</span>
-      <span class="month-en" id="month-en">MARCH</span>
+      <span class="month-year" id="month-year" style="font-size:14px;font-weight:700;color:var(--pink-mid);margin-left:4px;"></span>
     </div>
     <button class="month-nav-btn" onclick="changeMonth(1)">
       <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -743,8 +743,9 @@ function renderAll() {
 }
 
 function renderMonthHeader() {
-  document.getElementById('month-num').textContent = `${state.currentMonth}月`;
-  document.getElementById('month-en').textContent = MONTHS_EN[state.currentMonth - 1];
+  document.getElementById('month-num').textContent = `${state.currentYear}年${state.currentMonth}月`;
+  const yearEl = document.getElementById('month-year');
+  if (yearEl) yearEl.textContent = '';
 }
 
 // ===== TAG CLASS =====
@@ -1230,7 +1231,12 @@ async function syncDownload() {
     }
     const parsed = JSON.parse(text);
     state = { ...state, ...parsed };
+    // 読み込み後は今月を開く
+    const now = new Date();
+    state.currentYear = now.getFullYear();
+    state.currentMonth = now.getMonth() + 1;
     saveData();
+    showScreen('top');
     renderAll();
     document.getElementById('backup-overlay').classList.remove('show');
     showToast('読み込みました！');
