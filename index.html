@@ -70,7 +70,6 @@
     cursor: pointer; color: var(--pink-main); transition: all 0.2s;
   }
   .month-nav-btn:active { transform: scale(0.92); opacity: 0.6; }
-  .month-nav-btn svg { stroke-linecap: round; stroke-linejoin: round; }
   .month-title { text-align: center; flex: 1; }
   .month-title .month-num {
     font-size: 26px; font-weight: 900; color: var(--pink-main); letter-spacing: -1px;
@@ -120,7 +119,7 @@
   .select-wrap select {
     width: 100%; padding: 9px 18px 9px 8px; border-radius: var(--radius-sm);
     border: 1.5px solid var(--pink-border); background: var(--white);
-    font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif; font-size: 16px; font-weight: 700;
     color: var(--text-body); -webkit-appearance: none; cursor: pointer;
     box-shadow: var(--shadow);
   }
@@ -131,15 +130,15 @@
   .text-input {
     flex: 1; min-width: 0; padding: 9px 8px; border-radius: var(--radius-sm);
     border: 1.5px solid var(--pink-border); background: var(--white);
-    font-family: 'Noto Sans JP', sans-serif; font-size: 12px; color: var(--text-body);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 16px; color: var(--text-body);
     box-shadow: var(--shadow);
   }
   .text-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
   .amount-input {
     flex: 0 0 120px; min-width: 0; padding: 9px 8px; border-radius: var(--radius-sm);
     border: 1.5px solid var(--pink-border); background: var(--white);
-    font-family: 'Noto Sans JP', sans-serif; font-size: 12px; color: var(--text-body);
-    text-align: right; box-shadow: var(--shadow);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 16px; color: var(--text-body);
+    text-align: left; box-shadow: var(--shadow);
   }
   .amount-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
   .register-btn {
@@ -173,6 +172,8 @@
   .row-del:active { background: var(--pink-main); color: white; }
   .row-edit { width: 22px; height: 22px; border-radius: 50%; border: none; background: #e8f0ff; color: #5a7ad4; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
   .row-edit:active { background: #5a7ad4; color: white; }
+  .row-copy { width: 22px; height: 22px; border-radius: 50%; border: none; background: #e8ffef; color: #3a9e6a; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .row-copy:active { background: #3a9e6a; color: white; }
 
   /* ===== TOTAL BAR ===== */
   .total-bar {
@@ -244,9 +245,9 @@
   .dropdown-sheet h3 { font-size: 16px; font-weight: 900; color: var(--pink-main); margin-bottom: 14px; }
   .edit-form { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
   .edit-form-row { display: flex; gap: 8px; align-items: center; }
-  .edit-select { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 13px; -webkit-appearance: none; }
-  .edit-text { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 13px; }
-  .edit-amount { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 13px; text-align: right; }
+  .edit-select { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 16px; -webkit-appearance: none; }
+  .edit-text { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 16px; }
+  .edit-amount { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 16px; text-align: right; }
   .edit-save-btn { width: 100%; padding: 12px; border-radius: 20px; background: var(--pink-main); color: white; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 3px 10px rgba(240,81,138,0.35); }
   .filter-options-grid {
     display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0;
@@ -304,14 +305,14 @@
 <div id="screen-top" class="screen active">
   <div class="month-header">
     <button class="month-nav-btn" onclick="changeMonth(-1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="month-title">
       <span class="month-num" id="month-num">3月</span>
       <span class="month-en" id="month-en">MARCH</span>
     </div>
     <button class="month-nav-btn" onclick="changeMonth(1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
   </div>
 
@@ -395,7 +396,7 @@
       <input class="amount-input" type="number" id="default-amount" placeholder="金額" inputmode="numeric" onkeydown="handleDefaultEnter(event)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
-    <div class="expense-table" id="default-list">
+    <div class="expense-table scrollable" id="default-list">
       <div class="empty-state">デフォルト支出がありません</div>
     </div>
   </div>
@@ -492,6 +493,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
     <span>貯金</span>
   </button>
+  <button class="nav-btn" id="nav-backup" onclick="showBackupSheet()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <span>バックアップ</span>
+  </button>
 </nav>
 
 <!-- FILTER SHEET -->
@@ -499,6 +504,19 @@
   <div class="dropdown-sheet">
     <h3>カテゴリで絞り込み</h3>
     <div class="filter-options-grid" id="filter-options"></div>
+  </div>
+</div>
+
+<!-- BACKUP SHEET -->
+<div class="dropdown-overlay" id="backup-overlay" onclick="closeBackupSheet(event)">
+  <div class="dropdown-sheet">
+    <h3>バックアップ / 復元</h3>
+    <p style="font-size:12px;color:#999;margin-bottom:16px;">ブラウザが変わってもデータを引き継ぐにはバックアップファイルを保存してください。</p>
+    <button class="edit-save-btn" onclick="exportData()" style="margin-bottom:10px;">📥 バックアップを保存</button>
+    <label class="edit-save-btn" style="display:block;text-align:center;cursor:pointer;background:var(--pink-bg);color:var(--text-dark);box-shadow:none;border:2px solid var(--pink-border);">
+      📤 バックアップから復元
+      <input type="file" accept=".json" onchange="importData(event)" style="display:none;">
+    </label>
   </div>
 </div>
 
@@ -701,6 +719,7 @@ function renderExpenseList() {
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
+      <button class="row-copy" onclick="duplicateDefault('${e.defId}')" title="複製">⊕</button>
       <button class="row-edit" onclick="openEditDefault('${e.defId}')">✎</button>
       <button class="row-del" onclick="deleteDefaultForMonth('${e.defId}')">×</button>
     </div>
@@ -712,6 +731,7 @@ function renderExpenseList() {
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
+      <button class="row-copy" onclick="duplicateExpense(${i})" title="複製">⊕</button>
       <button class="row-edit" onclick="openEditExpense(${i})">✎</button>
       <button class="row-del" onclick="deleteExpense(${i})">×</button>
     </div>
@@ -753,6 +773,36 @@ function deleteExpense(index) {
   renderExpenseList();
   recalc();
   renderSavings();
+}
+
+// ===== DUPLICATE EXPENSE =====
+function duplicateExpense(index) {
+  const d = getCurrentData();
+  const e = d.expenses[index];
+  const now = new Date();
+  const date = `${state.currentMonth}/${now.getDate()}`;
+  d.expenses.push({ id: Date.now(), date, category: e.category, item: e.item, amount: e.amount });
+  saveData();
+  renderExpenseList();
+  recalc();
+  renderSavings();
+  showToast('複製しました！');
+}
+
+function duplicateDefault(defId) {
+  const d = getCurrentData();
+  const overrides = d.overrides || {};
+  const base = state.settings.defaults.find(e => e.defId === defId);
+  const effective = getEffectiveDefault(base, overrides);
+  if (!effective) return;
+  const now = new Date();
+  const date = `${state.currentMonth}/${now.getDate()}`;
+  d.expenses.push({ id: Date.now(), date, category: effective.category, item: effective.item, amount: effective.amount });
+  saveData();
+  renderExpenseList();
+  recalc();
+  renderSavings();
+  showToast('複製しました！');
 }
 
 // ===== DELETE DEFAULT FOR THIS MONTH ONLY =====
@@ -890,6 +940,18 @@ function addDefaultEntry() {
   showToast('全月の支出に追加しました！');
 }
 
+function duplicateDefaultEntry(index) {
+  const e = state.settings.defaults[index];
+  const defId = 'def_' + Date.now();
+  state.settings.defaults.push({ defId, category: e.category, item: e.item, amount: e.amount });
+  saveData();
+  renderDefaultList();
+  renderExpenseList();
+  recalc();
+  renderSavings();
+  showToast('複製しました！');
+}
+
 function deleteDefaultEntry(index) {
   state.settings.defaults.splice(index, 1);
   saveData();
@@ -911,6 +973,7 @@ function renderDefaultList() {
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
+      <button class="row-copy" onclick="duplicateDefaultEntry(${i})" title="複製">⊕</button>
       <button class="row-del" onclick="deleteDefaultEntry(${i})">×</button>
     </div>
   `).join('');
@@ -1006,6 +1069,45 @@ function showScreen(name) {
   document.getElementById(`screen-${name}`).classList.add('active');
   document.getElementById(`nav-${name}`).classList.add('active');
   if (name === 'savings') renderSavings();
+}
+
+// ===== BACKUP / RESTORE =====
+function showBackupSheet() {
+  document.getElementById('backup-overlay').classList.add('show');
+}
+function closeBackupSheet(e) {
+  if (e.target === document.getElementById('backup-overlay')) {
+    document.getElementById('backup-overlay').classList.remove('show');
+  }
+}
+function exportData() {
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kakeibo_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('バックアップを保存しました！');
+}
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      state = { ...state, ...parsed };
+      saveData();
+      renderAll();
+      document.getElementById('backup-overlay').classList.remove('show');
+      showToast('復元しました！');
+    } catch(err) {
+      showToast('ファイルが正しくありません');
+    }
+  };
+  reader.readAsText(file);
 }
 
 // ===== ENTER KEY HANDLERS =====
