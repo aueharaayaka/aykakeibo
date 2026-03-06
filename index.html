@@ -91,7 +91,7 @@
   .month-nav-btn:active { transform: scale(0.92); opacity: 0.6; }
   .month-title { text-align: center; flex: 1; }
   .month-title .month-num {
-    font-size: 26px; font-weight: 900; color: var(--pink-main); letter-spacing: -1px;
+    font-size: 26px; font-weight: 700; color: var(--pink-main); letter-spacing: -1px;
   }
   .month-title .month-en {
     display: none;
@@ -129,7 +129,7 @@
 
   /* ===== SECTION TITLE ===== */
   .section-title {
-    text-align: center; font-size: 16px; font-weight: 900;
+    text-align: center; font-size: 16px; font-weight: 700;
     color: var(--pink-main); margin: 10px 0 8px;
   }
 
@@ -218,7 +218,7 @@
     font-family: 'LINESeedJP', sans-serif; font-size: 12px; font-weight: 700;
     color: var(--text-dark); cursor: pointer; transition: all 0.2s;
   }
-  .total-amount { flex: 1; text-align: right; font-size: 17px; font-weight: 900; color: var(--pink-main); }
+  .total-amount { flex: 1; text-align: right; font-size: 17px; font-weight: 700; color: var(--pink-main); }
   .total-unit { font-size: 14px; font-weight: 700; color: var(--text-dark); }
 
   /* ===== CATEGORY TAGS ===== */
@@ -248,12 +248,12 @@
   .vcal-sheet { background:white; border-radius:20px 20px 0 0; padding:20px 16px 40px; width:100%; max-width:430px; }
   .vcal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
   .vcal-month-nav { background:none; border:none; font-size:20px; color:var(--pink-main); cursor:pointer; padding:4px 10px; }
-  .vcal-month-label { font-size:15px; font-weight:900; color:var(--text-dark); }
+  .vcal-month-label { font-size:15px; font-weight:700; color:var(--text-dark); }
   .vcal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
   .vcal-dow { text-align:center; font-size:11px; font-weight:700; color:#aaa; padding:2px 0; }
   .vcal-day { text-align:center; font-size:13px; padding:7px 2px; border-radius:8px; cursor:pointer; color:var(--text-body); position:relative; }
   .vcal-day.empty { cursor:default; }
-  .vcal-day.today { font-weight:900; color:var(--pink-main); }
+  .vcal-day.today { font-weight:700; color:var(--pink-main); }
   .vcal-day.in-range { background:var(--pink-bg); border-radius:0; }
   .vcal-day.range-start, .vcal-day.range-end { background:var(--pink-main); color:white; border-radius:8px; font-weight:700; }
   .vcal-day.range-start { border-radius:8px 0 0 8px; }
@@ -261,7 +261,7 @@
   .vcal-day.range-start.range-end { border-radius:8px; }
   .vcal-day.disabled { color:#ddd; cursor:default; }
   .vcal-hint { font-size:11px; color:#aaa; text-align:center; margin:10px 0 4px; }
-  .vcal-month-label { font-size:15px; font-weight:900; color:var(--text-dark); cursor:pointer; padding:4px 8px; border-radius:8px; }
+  .vcal-month-label { font-size:15px; font-weight:700; color:var(--text-dark); cursor:pointer; padding:4px 8px; border-radius:8px; }
   .vcal-month-label:active { background:var(--pink-bg); }
   .vcal-picker-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:4px 0 8px; }
   .vcal-picker-item { text-align:center; padding:10px 4px; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; color:var(--text-body); }
@@ -278,7 +278,7 @@
 
   /* ===== SETTINGS SCREEN ===== */
   .settings-title {
-    font-size: 24px; font-weight: 900; color: var(--pink-main); margin-bottom: 16px;
+    font-size: 24px; font-weight: 700; color: var(--pink-main); margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px;
   }
   .settings-section { margin-bottom: 20px; }
@@ -286,7 +286,7 @@
 
   /* ===== SAVINGS SCREEN ===== */
   .savings-title {
-    font-size: 24px; font-weight: 900; color: var(--pink-main); margin-bottom: 16px;
+    font-size: 24px; font-weight: 700; color: var(--pink-main); margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px;
   }
   .savings-columns { display: flex; gap: 12px; margin-top: 16px; flex: 1; min-height: 0; overflow: hidden; }
@@ -305,7 +305,7 @@
   .savings-row.current-month .s-amount { color: var(--pink-main); }
   .savings-year-header { background: var(--pink-bg); padding: 5px 10px; }
   .savings-year-row { background: var(--pink-border); border-bottom: 2px solid var(--pink-main); }
-  .savings-row .s-year-label { font-size: 13px; font-weight: 900; color: var(--pink-main) !important; }
+  .savings-row .s-year-label { font-size: 13px; font-weight: 700; color: var(--pink-main) !important; }
 
   /* ===== DROPDOWN OVERLAY ===== */
   .dropdown-overlay {
@@ -320,7 +320,7 @@
     animation: slideUp 0.25s ease;
   }
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .dropdown-sheet h3 { font-size: 16px; font-weight: 900; color: var(--pink-main); margin-bottom: 14px; }
+  .dropdown-sheet h3 { font-size: 16px; font-weight: 700; color: var(--pink-main); margin-bottom: 14px; }
   .edit-form { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
   .edit-form-row { display: flex; gap: 8px; align-items: center; }
   .edit-select { flex: 1; padding: 10px 12px; border-radius: 8px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'LINESeedJP', sans-serif; font-size: 16px; -webkit-appearance: none; }
@@ -447,12 +447,12 @@
   <div style="display:flex;gap:8px;margin-bottom:8px;">
     <div class="total-bar" style="flex:1;padding:6px 12px;">
       <span class="total-label" style="font-size:12px;">食費</span>
-      <span style="flex:1;text-align:right;font-size:15px;font-weight:900;color:var(--pink-main);" id="food-total">0</span>
+      <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="food-total">0</span>
       <span class="total-unit" style="font-size:12px;">円</span>
     </div>
     <div class="total-bar" style="flex:1;padding:6px 12px;">
       <span class="total-label" style="font-size:12px;">駐輪場</span>
-      <span style="flex:1;text-align:right;font-size:15px;font-weight:900;color:var(--pink-main);" id="parking-total">0</span>
+      <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="parking-total">0</span>
       <span class="total-unit" style="font-size:12px;">円</span>
     </div>
   </div>
@@ -501,7 +501,7 @@
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--pink-bg);border-radius:0 0 var(--radius) var(--radius);flex-shrink:0;">
       <span style="font-size:12px;font-weight:700;color:var(--pink-mid);">デフォルト合計</span>
-      <span style="font-size:15px;font-weight:900;color:var(--pink-main);" id="default-total">0</span>
+      <span style="font-size:15px;font-weight:700;color:var(--pink-main);" id="default-total">0</span>
       <span style="font-size:12px;color:var(--pink-mid);">円</span>
     </div>
   </div>
