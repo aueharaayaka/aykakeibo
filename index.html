@@ -372,7 +372,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="month-title" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-      <span class="month-num" id="month-num">3月</span>
+      <button onclick="openMonthJumpPicker()" style="display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:8px;font-family:'Noto Sans JP',sans-serif;" id="month-jump-btn">
+        <span class="month-num" id="month-num">3月</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pink-main)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
       <button id="back-to-today-btn" onclick="goToToday()" style="display:none;font-size:10px;font-weight:700;color:white;background:var(--pink-main);border:none;border-radius:20px;padding:2px 10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">今月に戻る</button>
     </div>
     <button class="month-nav-btn" onclick="changeMonth(1)">
@@ -610,6 +613,16 @@
   </div>
 </div>
 
+<!-- MONTH JUMP PICKER -->
+<div class="vcal-overlay" id="mjump-overlay" onclick="mjumpOverlayClick(event)">
+  <div class="vcal-sheet" id="mjump-sheet-inner">
+    <div id="mjump-picker-content"></div>
+    <div class="vcal-actions" style="margin-top:10px;">
+      <button class="vcal-cancel" onclick="mjumpClose()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
 <!-- VACATION CALENDAR -->
 <div class="vcal-overlay" id="vcal-overlay" onclick="vcalOverlayClick(event)">
   <div class="vcal-sheet" id="vcal-sheet-inner">
@@ -779,9 +792,7 @@ state.currentMonth = today.getMonth() + 1;
 if (state.currentYear < 2026 || (state.currentYear === 2026 && state.currentMonth < 3)) {
   state.currentYear = 2026; state.currentMonth = 3;
 }
-if (state.currentYear > 2030) {
-  state.currentYear = 2030; state.currentMonth = 12;
-}
+// 上限なし（2026年3月以降であれば何年でも利用可能）
 renderAll();
 
 // ===== MONTH KEY =====
@@ -820,7 +831,6 @@ function changeMonth(delta) {
   if (m > 12) { m = 1; y++; }
   if (m < 1)  { m = 12; y--; }
   if (y < 2026 || (y === 2026 && m < 3)) return;
-  if (y > 2030) return;
   state.currentYear = y;
   state.currentMonth = m;
   saveData();
@@ -1282,7 +1292,8 @@ function vcalShowPicker(mode) {
   const el = document.getElementById('vcal-picker-content');
 
   if (mode === 'year') {
-    const years = [2025, 2026, 2027, 2028, 2029, 2030, 2031];
+    const currentY = vcalState.year;
+    const years = Array.from({length: 11}, (_, i) => currentY - 5 + i);
     el.innerHTML = `<div style="margin-bottom:8px;font-size:13px;font-weight:700;color:#aaa;">年を選択</div>
       <div class="vcal-picker-grid">
         ${years.map(y => `<div class="vcal-picker-item${y === vcalState.year ? ' selected' : ''}" onclick="vcalPickYear(${y})">${y}</div>`).join('')}
@@ -1434,19 +1445,18 @@ function renderSavings() {
   const defaultChokin = defaults.filter(e => e.category === '貯金').reduce((s, e) => s + e.amount, 0);
   const defaultJo1 = defaults.filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0);
 
-  let allMonthKeys = [];
-  for (let y = 2026; y <= 2030; y++) {
-    const startM = (y === 2026) ? 3 : 1;
-    for (let m = startM; m <= 12; m++) allMonthKeys.push(monthKey(y, m));
-  }
+  // 集計範囲：2026年3月〜「現在月、3年先」まで動的に拡張
+  const endY = todayDate.getFullYear() + 3;
+  const endM = todayDate.getMonth() + 1;
 
   const chokinRows = [];
   const jo1Rows = [];
   let cumulativeChokin = 0, cumulativeJo1 = 0;
 
-  for (let y = 2026; y <= 2030; y++) {
+  for (let y = 2026; y <= endY; y++) {
     const startM = (y === 2026) ? 3 : 1;
-    for (let m = startM; m <= 12; m++) {
+    const lastM = 12;
+    for (let m = startM; m <= lastM; m++) {
       const k = monthKey(y, m);
       const d = state.data[k];
       const overrides = d ? (d.overrides || {}) : {};
@@ -1674,6 +1684,70 @@ function formatIncomeInput(el) {
     else changeMonth(-1);         // 右スワイプ → 前の月
   }, { passive: true });
 })();
+
+// ===== MONTH JUMP PICKER =====
+let mjumpState = { year: 0, mode: 'year' };
+
+function openMonthJumpPicker() {
+  mjumpState.year = state.currentYear;
+  mjumpState.mode = 'year';
+  mjumpRender();
+  document.getElementById('mjump-overlay').classList.add('show');
+}
+
+function mjumpClose() {
+  document.getElementById('mjump-overlay').classList.remove('show');
+}
+
+function mjumpOverlayClick(e) {
+  if (e.target === document.getElementById('mjump-overlay')) mjumpClose();
+}
+
+function mjumpRender() {
+  const el = document.getElementById('mjump-picker-content');
+  if (mjumpState.mode === 'year') {
+    const currentY = mjumpState.year;
+    const baseY = state.currentYear;
+    const years = Array.from({length: 11}, (_, i) => baseY - 5 + i)
+      .filter(y => y >= 2026);
+    el.innerHTML = `<div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#aaa;">年を選択</div>
+      <div class="vcal-picker-grid">
+        ${years.map(y => `<div class="vcal-picker-item${y === currentY ? ' selected' : ''}" onclick="mjumpPickYear(${y})">${y}</div>`).join('')}
+      </div>`;
+  } else {
+    const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    el.innerHTML = `<span class="vcal-picker-back" onclick="mjumpBackToYear()">◀ ${mjumpState.year}年</span>
+      <div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#aaa;">${mjumpState.year}年の月を選択</div>
+      <div class="vcal-picker-grid">
+        ${months.map((m,i) => {
+          const y = mjumpState.year, mo = i+1;
+          const isCurrent = (y === state.currentYear && mo === state.currentMonth);
+          const disabled = (y === 2026 && mo < 3);
+          return `<div class="vcal-picker-item${isCurrent ? ' selected' : ''}${disabled ? ' disabled' : ''}" ${disabled ? '' : `onclick="mjumpPickMonth(${mo})"`} style="${disabled ? 'color:#ddd;cursor:default;' : ''}">${m}</div>`;
+        }).join('')}
+      </div>`;
+  }
+}
+
+function mjumpPickYear(y) {
+  mjumpState.year = y;
+  mjumpState.mode = 'month';
+  mjumpRender();
+}
+
+function mjumpBackToYear() {
+  mjumpState.mode = 'year';
+  mjumpRender();
+}
+
+function mjumpPickMonth(m) {
+  const y = mjumpState.year;
+  state.currentYear = y;
+  state.currentMonth = m;
+  saveData();
+  mjumpClose();
+  renderAll();
+}
 
 // ===== TOAST =====
 let toastTimer;
