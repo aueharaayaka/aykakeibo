@@ -1139,7 +1139,12 @@ function renderTotalBar() {
   // 平日数・食費・駐輪場合計
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
   const dailyFoodRate = parseFloat(document.getElementById('daily-food-input').value) || 0;
-  document.getElementById('food-total').textContent = (dailyFoodRate * weekdays).toLocaleString();
+  // 当月の食費カテゴリのマイナス登録分を食費合計から差し引く（プラスは無視）
+  const foodDiscount = allExpenses
+    .filter(e => e.category === '食費' && e.amount < 0)
+    .reduce((s, e) => s + e.amount, 0);
+  const foodTotal = Math.max(0, dailyFoodRate * weekdays + foodDiscount);
+  document.getElementById('food-total').textContent = foodTotal.toLocaleString();
   const parkingRate = parseFloat(document.getElementById('parking-input').value) || 0;
   document.getElementById('parking-total').textContent = (parkingRate * weekdays).toLocaleString();
 }
