@@ -51,6 +51,11 @@
     display: flex; flex-direction: column;
     overflow: hidden;
   }
+  #screen-savings.active {
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    padding-bottom: 0;
+  }
 
   /* ===== BOTTOM NAV ===== */
   .bottom-nav {
@@ -284,10 +289,10 @@
     font-size: 24px; font-weight: 900; color: var(--pink-main); margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px;
   }
-  .savings-columns { display: flex; gap: 12px; margin-top: 16px; }
-  .savings-col { flex: 1; }
-  .savings-col-title { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
-  .savings-table { background: var(--white); border-radius: var(--radius); overflow-y: auto; max-height: 380px; -webkit-overflow-scrolling: touch; box-shadow: var(--shadow); }
+  .savings-columns { display: flex; gap: 12px; margin-top: 16px; flex: 1; min-height: 0; overflow: hidden; }
+  .savings-col { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .savings-col-title { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; flex-shrink: 0; }
+  .savings-table { background: var(--white); border-radius: var(--radius); overflow-y: auto; flex: 1; min-height: 0; -webkit-overflow-scrolling: touch; box-shadow: var(--shadow); padding-bottom: env(safe-area-inset-bottom, 0px); }
   .savings-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 10px; border-bottom: 1px solid var(--pink-bg);
@@ -298,6 +303,9 @@
   .savings-row .s-amount { font-weight: 700; color: var(--text-dark); }
   .savings-row.current-month { background: #fff0f5; }
   .savings-row.current-month .s-amount { color: var(--pink-main); }
+  .savings-year-header { background: var(--pink-bg); padding: 5px 10px; }
+  .savings-year-row { background: #f5e8ff; border-bottom: 2px solid #e0c8f8; }
+  .s-year-label { font-size: 13px; font-weight: 900; color: var(--pink-main); }
 
   /* ===== DROPDOWN OVERLAY ===== */
   .dropdown-overlay {
@@ -516,12 +524,12 @@
 
 <!-- SAVINGS SCREEN -->
 <div id="screen-savings" class="screen">
-  <div class="savings-title">
+  <div class="savings-title" style="flex-shrink:0;">
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
     貯金
   </div>
 
-  <div style="display:flex;gap:10px;flex-shrink:0;">
+  <div style="display:flex;gap:10px;flex-shrink:0;margin-bottom:0;">
     <div class="field-group" style="flex:1;min-width:0;">
       <div class="field-label">貯金 現在の合計</div>
       <div class="field-row">
@@ -536,7 +544,7 @@
     </div>
   </div>
 
-  <div style="display:flex;gap:10px;flex-shrink:0;">
+  <div style="display:flex;gap:10px;flex-shrink:0;margin-bottom:0;">
     <div class="field-group" style="flex:1;min-width:0;">
       <div class="field-label">貯金 予定の合計</div>
       <div class="field-row">
@@ -551,7 +559,7 @@
     </div>
   </div>
 
-  <div class="field-group">
+  <div class="field-group" style="flex-shrink:0;">
     <div class="field-label">目標金額</div>
     <div class="field-row">
       <div class="field-input-wrap"><input class="field-input" type="text" id="savings-goal" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
@@ -1458,15 +1466,25 @@ function renderSavings() {
 
   // 集計範囲：2026年3月〜「現在月、3年先」まで動的に拡張
   const endY = todayDate.getFullYear() + 3;
-  const endM = todayDate.getMonth() + 1;
+  const todayYear = todayDate.getFullYear();
+  const todayMonth = todayDate.getMonth() + 1;
 
-  const chokinRows = [];
-  const jo1Rows = [];
+  // 年別にグループ化した行データ
+  const chokinYearGroups = [];
+  const jo1YearGroups = [];
   let cumulativeChokin = 0, cumulativeJo1 = 0;
 
   for (let y = 2026; y <= endY; y++) {
     const startM = (y === 2026) ? 3 : 1;
     const lastM = 12;
+    // その年が完了しているか（全月が過去）
+    const yearDone = (y < todayYear) || (y === todayYear && todayMonth === 12 && todayDate.getDate() >= 28);
+    const yearChokinMonths = [];
+    const yearJo1Months = [];
+    let yearChokinTotal = 0, yearJo1Total = 0;
+    let yearChokinUsed = 0, yearJo1Used = 0;
+    let hasCurrentMonth = false;
+
     for (let m = startM; m <= lastM; m++) {
       const k = monthKey(y, m);
       const d = state.data[k];
@@ -1488,21 +1506,30 @@ function renderSavings() {
       const cAmt = defC + indivC;
       const jAmt = defJ + indivJ;
 
-      // 貯金使用（その月の登録分）を差し引く
-      const chokinUsed = d ? (d.expenses || []).filter(e => e.category === '貯金使用').reduce((s, e) => s + e.amount, 0) : 0;
-      // JO1使用（その月の登録分）を差し引く
-      const jo1Used = d ? (d.expenses || []).filter(e => e.category === 'JO1使用').reduce((s, e) => s + e.amount, 0) : 0;
-      plannedChokin += cAmt - chokinUsed;
-      plannedJo1 += jAmt - jo1Used;
-      if (k <= todayKey) { totalChokin += cAmt - chokinUsed; totalJo1 += jAmt - jo1Used; }
-      // 将来月も含めた予定累計（rowに使う）
-      cumulativeChokin += cAmt - chokinUsed;
-      cumulativeJo1 += jAmt - jo1Used;
+      const chokinUsedM = d ? (d.expenses || []).filter(e => e.category === '貯金使用').reduce((s, e) => s + e.amount, 0) : 0;
+      const jo1UsedM = d ? (d.expenses || []).filter(e => e.category === 'JO1使用').reduce((s, e) => s + e.amount, 0) : 0;
+
+      plannedChokin += cAmt - chokinUsedM;
+      plannedJo1 += jAmt - jo1UsedM;
+      if (k <= todayKey) { totalChokin += cAmt - chokinUsedM; totalJo1 += jAmt - jo1UsedM; }
+      cumulativeChokin += cAmt - chokinUsedM;
+      cumulativeJo1 += jAmt - jo1UsedM;
+
+      yearChokinTotal += cAmt - chokinUsedM;
+      yearJo1Total += jAmt - jo1UsedM;
+      yearChokinUsed += chokinUsedM;
+      yearJo1Used += jo1UsedM;
 
       const isCurrent = (k === monthKey(state.currentYear, state.currentMonth));
-      chokinRows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: cAmt, used: chokinUsed, cumulative: cumulativeChokin, isCurrent, isPast: k <= todayKey });
-      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, used: jo1Used, cumulative: cumulativeJo1, isCurrent, isPast: k <= todayKey });
+      if (isCurrent) hasCurrentMonth = true;
+      const isPast = k <= todayKey;
+
+      yearChokinMonths.push({ label: `${String(m).padStart(2,'0')}月`, amount: cAmt, used: chokinUsedM, cumulative: cumulativeChokin, isCurrent, isPast });
+      yearJo1Months.push({ label: `${String(m).padStart(2,'0')}月`, amount: jAmt, used: jo1UsedM, cumulative: cumulativeJo1, isCurrent, isPast });
     }
+
+    chokinYearGroups.push({ year: y, done: yearDone, months: yearChokinMonths, yearTotal: yearChokinTotal, cumulativeAtEnd: cumulativeChokin, hasCurrentMonth });
+    jo1YearGroups.push({ year: y, done: yearDone, months: yearJo1Months, yearTotal: yearJo1Total, cumulativeAtEnd: cumulativeJo1, hasCurrentMonth });
   }
 
   const currentTotal = totalChokin + totalJo1;
@@ -1524,19 +1551,38 @@ function renderSavings() {
     document.getElementById('savings-progress-wrap').style.display = 'none';
   }
 
-  const renderRows = (rows) => rows.map(r => `
-    <div class="savings-row ${r.isCurrent ? 'current-month' : ''}">
-      <span class="s-month" style="color:${r.isPast || r.isCurrent ? '' : '#bbb'}">${r.label}</span>
-      <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
-        <span class="s-amount" style="color:${r.isPast || r.isCurrent ? '' : '#bbb'}">${r.cumulative.toLocaleString()}円</span>
-        <span style="font-size:10px;color:#aaa;">+${r.amount.toLocaleString()}円</span>
-        ${r.used > 0 ? `<span style="font-size:10px;color:#d4537a;font-weight:700;">-${r.used.toLocaleString()}円</span>` : ''}
-      </span>
-    </div>
-  `).join('');
+  const renderYearGroups = (groups) => groups.map(g => {
+    if (g.done) {
+      // 年が終了した場合：年行のみ表示（累計継続）
+      return `
+        <div class="savings-row savings-year-row">
+          <span class="s-month s-year-label">${g.year}</span>
+          <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+            <span class="s-amount">${g.cumulativeAtEnd.toLocaleString()}円</span>
+            <span style="font-size:10px;color:#aaa;">年計+${g.yearTotal.toLocaleString()}円</span>
+          </span>
+        </div>`;
+    } else {
+      // 進行中の年：年ヘッダー行＋月行を表示
+      const yearHeader = `
+        <div class="savings-row savings-year-header">
+          <span class="s-month s-year-label">${g.year}年</span>
+        </div>`;
+      const monthRows = g.months.map(r => `
+        <div class="savings-row ${r.isCurrent ? 'current-month' : ''}">
+          <span class="s-month" style="color:${r.isPast || r.isCurrent ? '' : '#bbb'}">${r.label}</span>
+          <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+            <span class="s-amount" style="color:${r.isPast || r.isCurrent ? '' : '#bbb'}">${r.cumulative.toLocaleString()}円</span>
+            <span style="font-size:10px;color:#aaa;">+${r.amount.toLocaleString()}円</span>
+            ${r.used > 0 ? `<span style="font-size:10px;color:#d4537a;font-weight:700;">-${r.used.toLocaleString()}円</span>` : ''}
+          </span>
+        </div>`).join('');
+      return yearHeader + monthRows;
+    }
+  }).join('');
 
-  document.getElementById('savings-chokin-list').innerHTML = renderRows(chokinRows);
-  document.getElementById('savings-jo1-list').innerHTML = renderRows(jo1Rows);
+  document.getElementById('savings-chokin-list').innerHTML = renderYearGroups(chokinYearGroups);
+  document.getElementById('savings-jo1-list').innerHTML = renderYearGroups(jo1YearGroups);
 }
 
 // ===== SCREEN NAV =====
