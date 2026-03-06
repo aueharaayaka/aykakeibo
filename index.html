@@ -1467,10 +1467,10 @@ function renderSavings() {
       const cAmt = defC + indivC;
       const jAmt = defJ + indivJ;
 
-      plannedChokin += cAmt;
-      plannedJo1 += jAmt;
       // 貯金使用（その月の登録分）を差し引く
       const chokinUsed = d ? (d.expenses || []).filter(e => e.category === '貯金使用').reduce((s, e) => s + e.amount, 0) : 0;
+      plannedChokin += cAmt - chokinUsed;
+      plannedJo1 += jAmt;
       if (k <= todayKey) { totalChokin += cAmt - chokinUsed; totalJo1 += jAmt; }
       // 将来月も含めた予定累計（rowに使う）
       cumulativeChokin += cAmt - chokinUsed;
