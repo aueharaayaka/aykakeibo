@@ -166,7 +166,7 @@
     box-shadow: var(--shadow); margin-bottom: 12px;
   }
   .expense-table.scrollable {
-    max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    max-height: 280px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   .expense-row {
     display: flex; align-items: center; padding: 6px 12px;
@@ -216,13 +216,34 @@
   .vacation-row {
     display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
     background: var(--white); border-radius: var(--radius-sm);
-    padding: 8px 10px; box-shadow: var(--shadow);
+    padding: 8px 10px; box-shadow: var(--shadow); cursor: pointer;
   }
-  .vacation-date {
-    flex: 1; border: none; background: transparent; font-family: 'Noto Sans JP', sans-serif;
-    font-size: 14px; color: var(--text-body); min-width: 0;
-  }
+  .vacation-row:active { background: var(--pink-bg); }
   .vacation-sep { font-size: 12px; color: #aaa; flex-shrink: 0; }
+  .vacation-label { flex:1; font-size: 13px; color: var(--text-body); }
+
+  /* カスタムカレンダーピッカー */
+  .vcal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:300; align-items:flex-end; justify-content:center; }
+  .vcal-overlay.show { display:flex; }
+  .vcal-sheet { background:white; border-radius:20px 20px 0 0; padding:20px 16px 40px; width:100%; max-width:430px; }
+  .vcal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .vcal-month-nav { background:none; border:none; font-size:20px; color:var(--pink-main); cursor:pointer; padding:4px 10px; }
+  .vcal-month-label { font-size:15px; font-weight:900; color:var(--text-dark); }
+  .vcal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .vcal-dow { text-align:center; font-size:11px; font-weight:700; color:#aaa; padding:2px 0; }
+  .vcal-day { text-align:center; font-size:13px; padding:7px 2px; border-radius:8px; cursor:pointer; color:var(--text-body); position:relative; }
+  .vcal-day.empty { cursor:default; }
+  .vcal-day.today { font-weight:900; color:var(--pink-main); }
+  .vcal-day.in-range { background:var(--pink-bg); border-radius:0; }
+  .vcal-day.range-start, .vcal-day.range-end { background:var(--pink-main); color:white; border-radius:8px; font-weight:700; }
+  .vcal-day.range-start { border-radius:8px 0 0 8px; }
+  .vcal-day.range-end { border-radius:0 8px 8px 0; }
+  .vcal-day.range-start.range-end { border-radius:8px; }
+  .vcal-day.disabled { color:#ddd; cursor:default; }
+  .vcal-hint { font-size:11px; color:#aaa; text-align:center; margin:10px 0 4px; }
+  .vcal-actions { display:flex; gap:8px; margin-top:14px; }
+  .vcal-cancel { flex:1; padding:10px; border-radius:20px; border:2px solid var(--pink-border); background:white; font-family:'Noto Sans JP',sans-serif; font-size:13px; font-weight:700; color:var(--text-dark); cursor:pointer; }
+  .vcal-save { flex:2; padding:10px; border-radius:20px; border:none; background:var(--pink-main); font-family:'Noto Sans JP',sans-serif; font-size:13px; font-weight:700; color:white; cursor:pointer; }
 
   /* ===== SETTINGS SCREEN ===== */
   .settings-title {
@@ -330,9 +351,9 @@
     <button class="month-nav-btn" onclick="changeMonth(-1)">
       <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <div class="month-title">
+    <div class="month-title" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
       <span class="month-num" id="month-num">3月</span>
-      <span class="month-year" id="month-year" style="font-size:14px;font-weight:700;color:var(--pink-mid);margin-left:4px;"></span>
+      <button id="back-to-today-btn" onclick="goToToday()" style="display:none;font-size:10px;font-weight:700;color:white;background:var(--pink-main);border:none;border-radius:20px;padding:2px 10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">今月に戻る</button>
     </div>
     <button class="month-nav-btn" onclick="changeMonth(1)">
       <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -376,7 +397,7 @@
       <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
     </div>
     <input class="text-input" type="text" id="entry-item" placeholder="品目" onkeydown="handleEntryEnter(event)">
-    <input class="amount-input" type="text" id="entry-amount" placeholder="金額" inputmode="text" onkeydown="handleEntryEnter(event)">
+    <input class="amount-input" type="text" id="entry-amount" placeholder="金額" inputmode="text" onkeydown="handleEntryEnter(event)" oninput="formatNumberInput(this)">
     <button class="register-btn" onclick="addExpense()">登録</button>
   </div>
 
@@ -431,7 +452,7 @@
         <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </div>
       <input class="text-input" type="text" id="default-item" placeholder="品目" onkeydown="handleDefaultEnter(event)">
-      <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="text" onkeydown="handleDefaultEnter(event)">
+      <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="text" onkeydown="handleDefaultEnter(event)" oninput="formatNumberInput(this)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
     <div class="expense-table scrollable" id="default-list">
@@ -549,6 +570,23 @@
   <div class="dropdown-sheet">
     <h3>カテゴリで絞り込み</h3>
     <div class="filter-options-grid" id="filter-options"></div>
+  </div>
+</div>
+
+<!-- VACATION CALENDAR -->
+<div class="vcal-overlay" id="vcal-overlay" onclick="vcalOverlayClick(event)">
+  <div class="vcal-sheet">
+    <div class="vcal-header">
+      <button class="vcal-month-nav" onclick="vcalPrevMonth()">‹</button>
+      <span class="vcal-month-label" id="vcal-month-label"></span>
+      <button class="vcal-month-nav" onclick="vcalNextMonth()">›</button>
+    </div>
+    <div class="vcal-grid" id="vcal-grid"></div>
+    <div class="vcal-hint" id="vcal-hint">開始日をタップしてください</div>
+    <div class="vcal-actions">
+      <button class="vcal-cancel" onclick="vcalClose()">キャンセル</button>
+      <button class="vcal-save" id="vcal-save-btn" onclick="vcalSave()" disabled style="opacity:0.4;">保存</button>
+    </div>
   </div>
 </div>
 
@@ -756,8 +794,22 @@ function renderAll() {
 
 function renderMonthHeader() {
   document.getElementById('month-num').textContent = `${state.currentYear}年${state.currentMonth}月`;
-  const yearEl = document.getElementById('month-year');
-  if (yearEl) yearEl.textContent = '';
+  const now = new Date();
+  const isToday = state.currentYear === now.getFullYear() && state.currentMonth === now.getMonth() + 1;
+  const btn = document.getElementById('back-to-today-btn');
+  if (btn) btn.style.display = isToday ? 'none' : 'inline-block';
+}
+
+function goToToday() {
+  const now = new Date();
+  state.currentYear = now.getFullYear();
+  state.currentMonth = now.getMonth() + 1;
+  saveData();
+  renderAll();
+  const screen = document.getElementById('screen-top');
+  screen.classList.remove('slide-in-right', 'slide-in-left');
+  void screen.offsetWidth;
+  screen.classList.add('slide-in-right');
 }
 
 // ===== TAG CLASS =====
@@ -1001,43 +1053,22 @@ function getVacationYearRange() {
 
 function renderVacationList() {
   const vacations = state.settings.vacations || [];
-  const { min, max } = getVacationYearRange();
   const list = document.getElementById('vacation-list');
   if (!list) return;
-  if (vacations.length === 0) {
-    list.innerHTML = '';
-    return;
-  }
-  list.innerHTML = vacations.map((v, i) => `
-    <div class="vacation-row">
-      <input class="vacation-date" type="date" value="${v.from}" min="${min}" max="${max}"
-        onchange="updateVacation(${i},'from',this.value)">
-      <span class="vacation-sep">〜</span>
-      <input class="vacation-date" type="date" value="${v.to}" min="${min}" max="${max}"
-        onchange="updateVacation(${i},'to',this.value)">
-      <button class="row-del" onclick="removeVacation(${i})">×</button>
-    </div>
-  `).join('');
+  list.innerHTML = vacations.map((v, i) => {
+    const from = v.from.replaceAll('-', '/');
+    const to   = v.to.replaceAll('-', '/');
+    const label = from === to ? from : `${from} 〜 ${to}`;
+    return `
+    <div class="vacation-row" onclick="vcalOpen(${i})">
+      <span class="vacation-label">${label}</span>
+      <button class="row-del" onclick="event.stopPropagation();removeVacation(${i})">×</button>
+    </div>`;
+  }).join('');
 }
 
 function addVacation() {
-  const { min, max } = getVacationYearRange();
-  const now = new Date();
-  const from = now.toISOString().slice(0,10);
-  if (!state.settings.vacations) state.settings.vacations = [];
-  state.settings.vacations.push({ from, to: from });
-  saveData();
-  renderVacationList();
-  recalc();
-}
-
-function updateVacation(index, field, value) {
-  state.settings.vacations[index][field] = value;
-  // fromがtoより後になったら揃える
-  const v = state.settings.vacations[index];
-  if (v.from > v.to) state.settings.vacations[index].to = v.from;
-  saveData();
-  recalc();
+  vcalOpen(-1); // 新規
 }
 
 function removeVacation(index) {
@@ -1045,6 +1076,117 @@ function removeVacation(index) {
   saveData();
   renderVacationList();
   recalc();
+}
+
+// ===== VACATION CALENDAR PICKER =====
+let vcalState = { editIndex: -1, year: 0, month: 0, rangeFrom: null, rangeTo: null };
+
+function vcalOpen(index) {
+  const now = new Date();
+  vcalState.editIndex = index;
+  if (index >= 0 && state.settings.vacations[index]) {
+    const v = state.settings.vacations[index];
+    const d = new Date(v.from);
+    vcalState.year = d.getFullYear();
+    vcalState.month = d.getMonth();
+    vcalState.rangeFrom = v.from;
+    vcalState.rangeTo = v.to;
+  } else {
+    vcalState.year = now.getFullYear();
+    vcalState.month = now.getMonth();
+    vcalState.rangeFrom = null;
+    vcalState.rangeTo = null;
+  }
+  vcalRender();
+  document.getElementById('vcal-overlay').classList.add('show');
+}
+
+function vcalClose() {
+  document.getElementById('vcal-overlay').classList.remove('show');
+}
+
+function vcalOverlayClick(e) {
+  if (e.target === document.getElementById('vcal-overlay')) vcalClose();
+}
+
+function vcalPrevMonth() {
+  if (vcalState.month === 0) { vcalState.month = 11; vcalState.year--; }
+  else vcalState.month--;
+  vcalRender();
+}
+
+function vcalNextMonth() {
+  if (vcalState.month === 11) { vcalState.month = 0; vcalState.year++; }
+  else vcalState.month++;
+  vcalRender();
+}
+
+function vcalRender() {
+  const { year, month, rangeFrom, rangeTo } = vcalState;
+  const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('vcal-month-label').textContent = `${year}年 ${MONTHS[month]}`;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const dows = ['日','月','火','水','木','金','土'];
+  let html = dows.map(d => `<div class="vcal-dow">${d}</div>`).join('');
+
+  for (let i = 0; i < firstDay; i++) html += `<div class="vcal-day empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let cls = 'vcal-day';
+    if (key === today) cls += ' today';
+    if (rangeFrom && rangeTo) {
+      if (key > rangeFrom && key < rangeTo) cls += ' in-range';
+      if (key === rangeFrom) cls += ' range-start';
+      if (key === rangeTo) cls += ' range-end';
+    } else if (rangeFrom && key === rangeFrom) {
+      cls += ' range-start range-end';
+    }
+    html += `<div class="${cls}" onclick="vcalDayClick('${key}')">${d}</div>`;
+  }
+
+  document.getElementById('vcal-grid').innerHTML = html;
+
+  const hint = !rangeFrom ? '開始日をタップしてください' : !rangeTo || rangeFrom === rangeTo ? '終了日をタップしてください' : `${rangeFrom} 〜 ${rangeTo}`;
+  document.getElementById('vcal-hint').textContent = hint;
+
+  const saveBtn = document.getElementById('vcal-save-btn');
+  const canSave = !!(rangeFrom);
+  saveBtn.disabled = !canSave;
+  saveBtn.style.opacity = canSave ? '1' : '0.4';
+}
+
+function vcalDayClick(key) {
+  const { rangeFrom, rangeTo } = vcalState;
+  if (!rangeFrom || (rangeFrom && rangeTo && rangeFrom !== rangeTo)) {
+    // 最初のクリック or リセット
+    vcalState.rangeFrom = key;
+    vcalState.rangeTo = null;
+  } else if (rangeFrom && !rangeTo) {
+    // 2回目クリック
+    if (key < rangeFrom) { vcalState.rangeFrom = key; vcalState.rangeTo = null; }
+    else vcalState.rangeTo = key;
+  } else {
+    vcalState.rangeFrom = key;
+    vcalState.rangeTo = null;
+  }
+  vcalRender();
+}
+
+function vcalSave() {
+  const { editIndex, rangeFrom, rangeTo } = vcalState;
+  if (!rangeFrom) return;
+  const entry = { from: rangeFrom, to: rangeTo || rangeFrom };
+  if (!state.settings.vacations) state.settings.vacations = [];
+  if (editIndex >= 0) state.settings.vacations[editIndex] = entry;
+  else state.settings.vacations.push(entry);
+  saveData();
+  renderVacationList();
+  recalc();
+  vcalClose();
 }
 
 function addDefaultEntry() {
@@ -1299,6 +1441,15 @@ function handleDefaultEnter(e) {
 }
 
 // ===== FORMAT INCOME INPUT =====
+function formatNumberInput(el) {
+  const raw = el.value.replace(/,/g, '');
+  // マイナス記号や数字以外は保持しつつカンマ付与
+  if (/^-?\d+$/.test(raw)) {
+    const num = parseInt(raw, 10);
+    el.value = num.toLocaleString();
+  }
+}
+
 function formatIncomeInput(el) {
   const raw = el.value.replace(/,/g, '').replace(/[^0-9]/g, '');
   if (raw === '') { el.value = ''; return; }
