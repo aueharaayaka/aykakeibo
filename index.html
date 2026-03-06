@@ -220,6 +220,7 @@
   .tag-jo1     { background: #dde8ff; color: #5a7ad4; }
     .tag-sonota  { background: #f9d0de; color: #d4537a; }
   .tag-chokin-use { background: #ede0ff; color: #7a3ad4; border: 1.5px solid #c9a0f0; }
+  .tag-jo1-use    { background: #ccd8ff; color: #3a50d4; border: 1.5px solid #99b0f0; }
 
   /* ===== VACATION ===== */
   .vacation-row {
@@ -417,6 +418,7 @@
         <option value="JO1">JO1</option>
         <option value="その他">その他</option>
         <option value="貯金使用">貯金使用</option>
+        <option value="JO1使用">JO1使用</option>
       </select>
       <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
     </div>
@@ -472,6 +474,8 @@
           <option value="貯金">貯金</option>
           <option value="JO1">JO1</option>
           <option value="その他">その他</option>
+          <option value="貯金使用">貯金使用</option>
+          <option value="JO1使用">JO1使用</option>
         </select>
         <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </div>
@@ -668,6 +672,8 @@
           <option value="貯金">貯金</option>
           <option value="JO1">JO1</option>
           <option value="その他">その他</option>
+          <option value="貯金使用">貯金使用</option>
+          <option value="JO1使用">JO1使用</option>
         </select>
       </div>
       <div class="edit-form-row">
@@ -871,8 +877,8 @@ function recalc() {
   saveData();
 
   const allExpenses = getAllExpenses();
-  // 貯金使用は現金支出でないので所持金・残高から除外
-  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用');
+  // 貯金使用・JO1使用は現金支出でないので所持金・残高から除外
+  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用' && e.category !== 'JO1使用');
   const totalExpenses = cashExpenses.reduce((s, e) => s + e.amount, 0);
   const holdings = incomeVal - totalExpenses;
 
@@ -925,7 +931,7 @@ function goToToday() {
 
 // ===== TAG CLASS =====
 function tagClass(cat) {
-  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','JO1':'tag-jo1','その他':'tag-sonota','貯金使用':'tag-chokin-use' };
+  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','JO1':'tag-jo1','その他':'tag-sonota','貯金使用':'tag-chokin-use','JO1使用':'tag-jo1-use' };
   return map[cat] || 'tag-sonota';
 }
 
@@ -1127,7 +1133,7 @@ function renderTotalBar() {
 
 // ===== FILTER SHEET =====
 function openFilterSheet() {
-  const categories = ['全体', '食費', '外食', '交通費', '貯金', 'JO1', 'その他'];
+  const categories = ['全体', '食費', '外食', '交通費', '貯金', 'JO1', 'その他', '貯金使用', 'JO1使用'];
   const opts = document.getElementById('filter-options');
   opts.innerHTML = categories.map(c => `
     <div class="filter-option ${c === state.totalFilter ? 'selected' : ''}" onclick="selectFilter('${c}')">
@@ -1479,16 +1485,18 @@ function renderSavings() {
 
       // 貯金使用（その月の登録分）を差し引く
       const chokinUsed = d ? (d.expenses || []).filter(e => e.category === '貯金使用').reduce((s, e) => s + e.amount, 0) : 0;
+      // JO1使用（その月の登録分）を差し引く
+      const jo1Used = d ? (d.expenses || []).filter(e => e.category === 'JO1使用').reduce((s, e) => s + e.amount, 0) : 0;
       plannedChokin += cAmt - chokinUsed;
-      plannedJo1 += jAmt;
-      if (k <= todayKey) { totalChokin += cAmt - chokinUsed; totalJo1 += jAmt; }
+      plannedJo1 += jAmt - jo1Used;
+      if (k <= todayKey) { totalChokin += cAmt - chokinUsed; totalJo1 += jAmt - jo1Used; }
       // 将来月も含めた予定累計（rowに使う）
       cumulativeChokin += cAmt - chokinUsed;
-      cumulativeJo1 += jAmt;
+      cumulativeJo1 += jAmt - jo1Used;
 
       const isCurrent = (k === monthKey(state.currentYear, state.currentMonth));
       chokinRows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: cAmt, used: chokinUsed, cumulative: cumulativeChokin, isCurrent, isPast: k <= todayKey });
-      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, used: 0, cumulative: cumulativeJo1, isCurrent, isPast: k <= todayKey });
+      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, used: jo1Used, cumulative: cumulativeJo1, isCurrent, isPast: k <= todayKey });
     }
   }
 
