@@ -891,15 +891,17 @@ function recalc() {
 
   const allExpenses = getAllExpenses();
   // 貯金使用・JO1使用は現金支出でないので所持金・残高から除外
-  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用' && e.category !== 'JO1使用');
+  // 食費マイナスは食費予算表示のみに反映し、所持金・残高には影響させない
+  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用' && e.category !== 'JO1使用' && !(e.category === '食費' && e.amount < 0));
   const totalExpenses = cashExpenses.reduce((s, e) => s + e.amount, 0);
   const holdings = incomeVal - totalExpenses;
 
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
   const dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
   const parking = parseFloat(document.getElementById('parking-input').value) || 0;
+  const foodDiscount = allExpenses.filter(e => e.category === '食費' && e.amount < 0).reduce((s, e) => s + e.amount, 0);
   const nonFoodExpenses = cashExpenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
-  const balance = incomeVal - (nonFoodExpenses + dailyFood * weekdays + parking * weekdays);
+  const balance = incomeVal - (nonFoodExpenses + Math.max(0, dailyFood * weekdays + foodDiscount) + parking * weekdays);
 
   document.getElementById('holdings-display').value = holdings.toLocaleString();
   document.getElementById('balance-display').value = balance.toLocaleString();
