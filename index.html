@@ -43,7 +43,7 @@
   .screen.active { display: block; }
   #screen-settings.active {
     display: flex; flex-direction: column;
-    overflow-y: hidden; /* 画面自体はスクロールさせない */
+    overflow-y: visible;
   }
 
   /* ===== BOTTOM NAV ===== */
@@ -473,7 +473,7 @@
       <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="text" onkeydown="handleDefaultEnter(event)" oninput="formatNumberInput(this)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
-    <div class="expense-table scrollable setting-list" id="default-list" style="flex:1;max-height:none;">
+    <div class="expense-table scrollable setting-list" id="default-list" style="flex:1;max-height:none;overflow-y:auto;-webkit-overflow-scrolling:touch;">
       <div class="empty-state">デフォルト支出がありません</div>
     </div>
   </div>
