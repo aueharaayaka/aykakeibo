@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="cache-version" content="1772792694">
+<meta name="cache-version" content="1772774192">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -335,12 +335,11 @@
     padding: 8px 14px; border-radius: 20px;
     cursor: pointer; font-size: 13px; font-weight: 700;
     background: var(--pink-bg); color: var(--text-body);
-    border: 2px solid transparent;
-    transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 2px solid transparent; transition: all 0.15s;
   }
   .filter-option.selected {
     background: var(--pink-main); color: white;
-    border-color: var(--pink-main); transform: scale(1.04);
+    border-color: var(--pink-main);
   }
   .filter-option .check { font-size: 12px; }
 
@@ -376,39 +375,6 @@
   }
   .header-icon-btn:active { opacity: 0.7; }
   .header-icon-btn svg { width: 22px; height: 22px; }
-
-  /* ===== SCREEN FADE-IN (画面切り替え) ===== */
-  @keyframes screenFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .screen-enter { animation: screenFadeIn 0.28s ease forwards; }
-
-  /* ===== NAV ICON BOUNCE ===== */
-  @keyframes navIconBounce { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
-  .nav-btn.nav-anim svg { animation: navIconBounce 0.38s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-  /* ===== SHEET CLOSE (閉じるアニメーション) ===== */
-  @keyframes slideDown { from { transform: translateY(0); } to { transform: translateY(110%); } }
-  .dropdown-sheet.closing, .vcal-sheet.closing { animation: slideDown 0.22s ease forwards; }
-  @keyframes overlayFadeOut { to { background: rgba(0,0,0,0); } }
-  .dropdown-overlay.closing-overlay, .vcal-overlay.closing-overlay { animation: overlayFadeOut 0.22s ease forwards; pointer-events: none; }
-
-  /* ===== VCAL SHEET SLIDE UP ===== */
-  .vcal-sheet { animation: slideUp 0.25s ease; }
-
-  /* ===== ROW DELETE (行削除アニメーション) ===== */
-  @keyframes rowDeleteOut { 0% { opacity: 1; transform: translateX(0); max-height: 50px; } 100% { opacity: 0; transform: translateX(36px); max-height: 0; padding-top: 0; padding-bottom: 0; } }
-  .expense-row.deleting { animation: rowDeleteOut 0.25s ease forwards; overflow: hidden; }
-
-  /* ===== REGISTER BUTTON SUCCESS ===== */
-  @keyframes btnSuccess { 0%, 100% { box-shadow: 0 3px 10px rgba(240,81,138,0.35); transform: scale(1); } 45% { transform: scale(0.93); box-shadow: 0 0 0 5px rgba(240,81,138,0.22); } }
-  .register-btn.success { animation: btnSuccess 0.35s ease; }
-
-  /* ===== NUMBER POP (合計ポップ) ===== */
-  @keyframes numPop { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.1); } }
-  .num-pop { animation: numPop 0.28s ease; display: inline-block; }
-
-  /* ===== VCAL PICKER ITEM SPRING ===== */
-  .vcal-picker-item { transition: background 0.15s, color 0.15s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .vcal-picker-item.selected { transform: scale(1.06); }
 </style>
 </head>
 <body>
@@ -998,7 +964,7 @@ function renderExpenseList() {
   }
 
   const defaultRows = effectiveDefaults.map(e => `
-    <div class="expense-row" data-def-id="${e.defId}" style="background:#fdf8fb;">
+    <div class="expense-row" style="background:#fdf8fb;">
       <span class="row-date" style="font-size:10px;color:#ccc;min-width:28px;">毎月</span>
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item || ''}</span>
@@ -1010,7 +976,7 @@ function renderExpenseList() {
   `).join('');
 
   const expenseRows = expenses.map((e, i) => `
-    <div class="expense-row" data-expense-idx="${i}">
+    <div class="expense-row">
       <span class="row-date">${e.date}</span>
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item || ''}</span>
@@ -1047,22 +1013,16 @@ function addExpense() {
   recalc();
   renderSavings();
   showToast('登録しました！');
-  triggerBtnSuccess(document.querySelector('.entry-form .register-btn'));
 }
 
 // ===== DELETE EXPENSE =====
 function deleteExpense(index) {
-  const row = document.querySelector(`#expense-list .expense-row[data-expense-idx="${index}"]`);
-  const doDelete = () => {
-    const d = getCurrentData();
-    d.expenses.splice(index, 1);
-    saveData();
-    renderExpenseList();
-    recalc();
-    renderSavings();
-  };
-  if (row) { row.classList.add('deleting'); setTimeout(doDelete, 250); }
-  else doDelete();
+  const d = getCurrentData();
+  d.expenses.splice(index, 1);
+  saveData();
+  renderExpenseList();
+  recalc();
+  renderSavings();
 }
 
 // ===== DUPLICATE EXPENSE =====
@@ -1097,17 +1057,12 @@ function duplicateDefault(defId) {
 
 // ===== DELETE DEFAULT FOR THIS MONTH ONLY =====
 function deleteDefaultForMonth(defId) {
-  const row = document.querySelector(`#expense-list .expense-row[data-def-id="${defId}"]`);
-  const doDelete = () => {
-    const d = getCurrentData();
-    d.overrides[defId] = { deleted: true };
-    saveData();
-    renderExpenseList();
-    recalc();
-    renderSavings();
-  };
-  if (row) { row.classList.add('deleting'); setTimeout(doDelete, 250); }
-  else doDelete();
+  const d = getCurrentData();
+  d.overrides[defId] = { deleted: true };
+  saveData();
+  renderExpenseList();
+  recalc();
+  renderSavings();
 }
 
 // ===== EDIT SHEET =====
@@ -1153,7 +1108,7 @@ function saveEdit() {
   }
 
   saveData();
-  animateSheetClose('edit-overlay');
+  document.getElementById('edit-overlay').classList.remove('show');
   editTarget = null;
   renderExpenseList();
   recalc();
@@ -1163,7 +1118,7 @@ function saveEdit() {
 
 function closeEditSheet(e) {
   if (e.target === document.getElementById('edit-overlay')) {
-    animateSheetClose('edit-overlay');
+    document.getElementById('edit-overlay').classList.remove('show');
     editTarget = null;
   }
 }
@@ -1180,7 +1135,6 @@ function renderTotalBar() {
     total = allExpenses.filter(e => e.category === filter).reduce((s, e) => s + e.amount, 0);
   }
   document.getElementById('total-amount').textContent = total.toLocaleString();
-  triggerNumPop('total-amount');
 
   // 平日数・食費・駐輪場合計
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
@@ -1194,7 +1148,6 @@ function renderTotalBar() {
   document.getElementById('food-total').textContent = foodTotal.toLocaleString();
   const parkingRate = parseFloat(document.getElementById('parking-input').value) || 0;
   document.getElementById('parking-total').textContent = (parkingRate * weekdays).toLocaleString();
-  triggerNumPop('parking-total');
 }
 
 // ===== FILTER SHEET =====
@@ -1210,12 +1163,12 @@ function openFilterSheet() {
 }
 function closeFilterSheet(e) {
   if (e.target === document.getElementById('filter-overlay')) {
-    animateSheetClose('filter-overlay');
+    document.getElementById('filter-overlay').classList.remove('show');
   }
 }
 function selectFilter(cat) {
   state.totalFilter = cat;
-  animateSheetClose('filter-overlay');
+  document.getElementById('filter-overlay').classList.remove('show');
   renderTotalBar();
 }
 
@@ -1285,7 +1238,7 @@ function vcalOpen(index) {
 }
 
 function vcalClose() {
-  animateSheetClose('vcal-overlay');
+  document.getElementById('vcal-overlay').classList.remove('show');
 }
 
 function vcalOverlayClick(e) {
@@ -1458,7 +1411,6 @@ function addDefaultEntry() {
   recalc();
   renderSavings();
   showToast('全月の支出に追加しました！');
-  triggerBtnSuccess(document.querySelector('#screen-settings .register-btn'));
 }
 
 function duplicateDefaultEntry(index) {
@@ -1474,17 +1426,12 @@ function duplicateDefaultEntry(index) {
 }
 
 function deleteDefaultEntry(index) {
-  const row = document.querySelector(`#default-list .expense-row[data-default-idx="${index}"]`);
-  const doDelete = () => {
-    state.settings.defaults.splice(index, 1);
-    saveData();
-    renderDefaultList();
-    renderExpenseList();
-    recalc();
-    renderSavings();
-  };
-  if (row) { row.classList.add('deleting'); setTimeout(doDelete, 250); }
-  else doDelete();
+  state.settings.defaults.splice(index, 1);
+  saveData();
+  renderDefaultList();
+  renderExpenseList();
+  recalc();
+  renderSavings();
 }
 
 function renderDefaultTotal() {
@@ -1502,7 +1449,7 @@ function renderDefaultList() {
     return;
   }
   list.innerHTML = defaults.map((e, i) => `
-    <div class="expense-row" data-default-idx="${i}">
+    <div class="expense-row">
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item || ''}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
@@ -1644,48 +1591,16 @@ function renderSavings() {
   document.getElementById('savings-jo1-list').innerHTML = renderYearGroups(jo1YearGroups);
 }
 
-// ===== ANIMATION HELPERS =====
-function animateSheetClose(overlayId) {
-  const overlay = document.getElementById(overlayId);
-  if (!overlay) return;
-  const sheet = overlay.querySelector('.dropdown-sheet, .vcal-sheet');
-  overlay.classList.add('closing-overlay');
-  if (sheet) sheet.classList.add('closing');
-  setTimeout(() => {
-    overlay.classList.remove('show', 'closing-overlay');
-    if (sheet) sheet.classList.remove('closing');
-  }, 220);
-}
-
-function triggerNumPop(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.remove('num-pop');
-  void el.offsetWidth;
-  el.classList.add('num-pop');
-}
-
-function triggerBtnSuccess(btn) {
-  if (!btn) return;
-  btn.classList.remove('success');
-  void btn.offsetWidth;
-  btn.classList.add('success');
-}
-
 // ===== SCREEN NAV =====
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => {
-    s.classList.remove('active', 'screen-enter');
+    s.classList.remove('active');
     s.style.display = '';
   });
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active', 'nav-anim'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if (name === 'vacation') renderVacationList();
-  const screen = document.getElementById(`screen-${name}`);
-  screen.classList.add('active');
-  void screen.offsetWidth;
-  screen.classList.add('screen-enter');
-  const navBtn = document.getElementById(`nav-${name}`);
-  navBtn.classList.add('active', 'nav-anim');
+  document.getElementById(`screen-${name}`).classList.add('active');
+  document.getElementById(`nav-${name}`).classList.add('active');
   if (name === 'savings') renderSavings();
 }
 
@@ -1697,7 +1612,7 @@ function showBackupSheet() {
 }
 function closeBackupSheet(e) {
   if (e.target === document.getElementById('backup-overlay')) {
-    animateSheetClose('backup-overlay');
+    document.getElementById('backup-overlay').classList.remove('show');
   }
 }
 
@@ -1713,7 +1628,7 @@ async function syncUpload() {
       body: json
     });
     showToast('クラウドに保存しました！');
-    animateSheetClose('backup-overlay');
+    document.getElementById('backup-overlay').classList.remove('show');
   } catch(e) {
     showToast('保存に失敗しました');
   }
@@ -1738,7 +1653,7 @@ async function syncDownload() {
     saveData();
     showScreen('top');
     renderAll();
-    animateSheetClose('backup-overlay');
+    document.getElementById('backup-overlay').classList.remove('show');
     showToast('読み込みました！');
   } catch(e) {
     showToast('読み込みに失敗しました');
@@ -1769,7 +1684,7 @@ function importData(e) {
       state = { ...state, ...parsed };
       saveData();
       renderAll();
-      animateSheetClose('backup-overlay');
+      document.getElementById('backup-overlay').classList.remove('show');
       showToast('復元しました！');
     } catch(err) {
       showToast('ファイルが正しくありません');
@@ -1877,7 +1792,7 @@ function openMonthJumpPicker() {
 }
 
 function mjumpClose() {
-  animateSheetClose('mjump-overlay');
+  document.getElementById('mjump-overlay').classList.remove('show');
 }
 
 function mjumpOverlayClick(e) {
