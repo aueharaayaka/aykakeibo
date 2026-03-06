@@ -1638,7 +1638,7 @@ async function syncUpload() {
 async function syncDownload() {
   showToast('読み込み中...');
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
+  const timer = setTimeout(() => controller.abort(), 30000);
   try {
     const res = await fetch(GAS_URL + '?t=' + Date.now(), { signal: controller.signal });
     clearTimeout(timer);
