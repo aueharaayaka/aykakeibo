@@ -1635,46 +1635,28 @@ async function syncUpload() {
 }
 
 // クラウドから読み込む
-function syncDownload() {
+async function syncDownload() {
   showToast('読み込み中...');
-  const cbName = '__kakeibo_cb_' + Date.now() + '__';
-  const script = document.createElement('script');
-  const timeout = setTimeout(() => {
-    cleanup();
-    showToast('読み込みに失敗しました');
-  }, 10000);
-  function cleanup() {
-    clearTimeout(timeout);
-    delete window[cbName];
-    if (script.parentNode) script.parentNode.removeChild(script);
-  }
-  window[cbName] = function(parsed) {
-    cleanup();
-    try {
-      if (!parsed || Object.keys(parsed).length === 0) {
-        showToast('クラウドにデータがありません');
-        return;
-      }
-      state = { ...state, ...parsed };
-      // 読み込み後は今月を開く
-      const now = new Date();
-      state.currentYear = now.getFullYear();
-      state.currentMonth = now.getMonth() + 1;
-      saveData();
-      showScreen('top');
-      renderAll();
-      document.getElementById('backup-overlay').classList.remove('show');
-      showToast('読み込みました！');
-    } catch(e) {
-      showToast('読み込みに失敗しました');
+  try {
+    const res = await fetch(GAS_URL + '?t=' + Date.now());
+    const parsed = await res.json();
+    if (!parsed || Object.keys(parsed).length === 0) {
+      showToast('クラウドにデータがありません');
+      return;
     }
-  };
-  script.src = GAS_URL + '?callback=' + cbName + '&t=' + Date.now();
-  script.onerror = function() {
-    cleanup();
+    state = { ...state, ...parsed };
+    // 読み込み後は今月を開く
+    const now = new Date();
+    state.currentYear = now.getFullYear();
+    state.currentMonth = now.getMonth() + 1;
+    saveData();
+    showScreen('top');
+    renderAll();
+    document.getElementById('backup-overlay').classList.remove('show');
+    showToast('読み込みました！');
+  } catch(e) {
     showToast('読み込みに失敗しました');
-  };
-  document.head.appendChild(script);
+  }
 }
 
 // ファイルに保存
