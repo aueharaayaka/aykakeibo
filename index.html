@@ -41,6 +41,7 @@
   /* ===== SCREENS ===== */
   .screen { display: none; padding: env(safe-area-inset-top, 14px) 14px 90px; height: 100vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
   .screen.active { display: block; }
+  #screen-settings.active { display: flex; flex-direction: column; }
 
   /* ===== BOTTOM NAV ===== */
   .bottom-nav {
@@ -450,7 +451,7 @@
     設定
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section" style="flex:1;min-width:0;display:flex;flex-direction:column;">
     <div class="settings-label">デフォルトの設定</div>
     <div class="entry-form">
       <div class="select-wrap">
@@ -469,7 +470,7 @@
       <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="text" onkeydown="handleDefaultEnter(event)" oninput="formatNumberInput(this)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
-    <div class="expense-table scrollable setting-list" id="default-list">
+    <div class="expense-table scrollable setting-list" id="default-list" style="flex:1;max-height:none;">
       <div class="empty-state">デフォルト支出がありません</div>
     </div>
   </div>
@@ -1430,7 +1431,10 @@ function renderSavings() {
 
 // ===== SCREEN NAV =====
 function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = '';
+  });
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if (name === 'vacation') renderVacationList();
   document.getElementById(`screen-${name}`).classList.add('active');
