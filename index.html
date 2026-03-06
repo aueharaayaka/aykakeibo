@@ -1438,6 +1438,7 @@ function renderSavings() {
 
   const chokinRows = [];
   const jo1Rows = [];
+  let cumulativeChokin = 0, cumulativeJo1 = 0;
 
   for (let y = 2026; y <= 2030; y++) {
     const startM = (y === 2026) ? 3 : 1;
@@ -1465,10 +1466,13 @@ function renderSavings() {
       plannedChokin += cAmt;
       plannedJo1 += jAmt;
       if (k <= todayKey) { totalChokin += cAmt; totalJo1 += jAmt; }
+      // 将来月も含めた予定累計（rowに使う）
+      cumulativeChokin += cAmt;
+      cumulativeJo1 += jAmt;
 
       const isCurrent = (k === monthKey(state.currentYear, state.currentMonth));
-      chokinRows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: cAmt, isCurrent });
-      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, isCurrent });
+      chokinRows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: cAmt, cumulative: cumulativeChokin, isCurrent, isPast: k <= todayKey });
+      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, cumulative: cumulativeJo1, isCurrent, isPast: k <= todayKey });
     }
   }
 
@@ -1493,8 +1497,11 @@ function renderSavings() {
 
   const renderRows = (rows) => rows.map(r => `
     <div class="savings-row ${r.isCurrent ? 'current-month' : ''}">
-      <span class="s-month">${r.label}</span>
-      <span class="s-amount">${r.amount.toLocaleString()}円</span>
+      <span class="s-month" style="color:${r.isPast || r.isCurrent ? '' : '#bbb'}">${r.label}</span>
+      <span style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
+        <span class="s-amount" style="color:${r.isPast || r.isCurrent ? '' : '#bbb'}">${r.cumulative.toLocaleString()}円</span>
+        <span style="font-size:10px;color:#ccc;">+${r.amount.toLocaleString()}円</span>
+      </span>
     </div>
   `).join('');
 
