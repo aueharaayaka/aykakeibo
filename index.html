@@ -219,6 +219,7 @@
   .tag-chokin  { background: #f0e0ff; color: #8a5ad4; }
   .tag-jo1     { background: #dde8ff; color: #5a7ad4; }
     .tag-sonota  { background: #f9d0de; color: #d4537a; }
+  .tag-chokin-use { background: #ede0ff; color: #7a3ad4; border: 1.5px solid #c9a0f0; }
 
   /* ===== VACATION ===== */
   .vacation-row {
@@ -412,6 +413,7 @@
         <option value="貯金">貯金</option>
         <option value="JO1">JO1</option>
         <option value="その他">その他</option>
+        <option value="貯金使用">貯金使用</option>
       </select>
       <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
     </div>
@@ -540,7 +542,7 @@
   <div class="field-group">
     <div class="field-label">目標金額</div>
     <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input" type="number" id="savings-goal" placeholder="0" inputmode="numeric" oninput="saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
+      <div class="field-input-wrap"><input class="field-input" type="text" id="savings-goal" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
     </div>
     <div class="progress-wrap" id="savings-progress-wrap" style="display:none">
       <div class="progress-label">
@@ -859,13 +861,15 @@ function recalc() {
   saveData();
 
   const allExpenses = getAllExpenses();
-  const totalExpenses = allExpenses.reduce((s, e) => s + e.amount, 0);
+  // 貯金使用は現金支出でないので所持金・残高から除外
+  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用');
+  const totalExpenses = cashExpenses.reduce((s, e) => s + e.amount, 0);
   const holdings = incomeVal - totalExpenses;
 
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
   const dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
   const parking = parseFloat(document.getElementById('parking-input').value) || 0;
-  const nonFoodExpenses = allExpenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
+  const nonFoodExpenses = cashExpenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
   const balance = incomeVal - (nonFoodExpenses + dailyFood * weekdays + parking * weekdays);
 
   document.getElementById('holdings-display').value = holdings.toLocaleString();
@@ -880,7 +884,7 @@ function renderAll() {
   document.getElementById('income-input').value = d.income ? Number(d.income).toLocaleString() : '';
   document.getElementById('daily-food-input').value = state.settings.dailyFood || '';
   document.getElementById('parking-input').value = state.settings.parking || '';
-  document.getElementById('savings-goal').value = state.settings.goal || '';
+  document.getElementById('savings-goal').value = state.settings.goal ? Number(state.settings.goal).toLocaleString() : '';
   recalc();
   renderExpenseList();
   renderDefaultList();
@@ -911,7 +915,7 @@ function goToToday() {
 
 // ===== TAG CLASS =====
 function tagClass(cat) {
-  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','JO1':'tag-jo1','その他':'tag-sonota' };
+  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','JO1':'tag-jo1','その他':'tag-sonota','貯金使用':'tag-chokin-use' };
   return map[cat] || 'tag-sonota';
 }
 
@@ -1137,7 +1141,7 @@ function selectFilter(cat) {
 function saveSettings() {
   state.settings.dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
   state.settings.parking = parseFloat(document.getElementById('parking-input').value) || 0;
-  state.settings.goal = parseFloat(document.getElementById('savings-goal').value) || 0;
+  state.settings.goal = parseFloat((document.getElementById('savings-goal').value||'').replace(/,/g,'')) || 0;
   saveData();
 }
 
@@ -1465,14 +1469,16 @@ function renderSavings() {
 
       plannedChokin += cAmt;
       plannedJo1 += jAmt;
-      if (k <= todayKey) { totalChokin += cAmt; totalJo1 += jAmt; }
+      // 貯金使用（その月の登録分）を差し引く
+      const chokinUsed = d ? (d.expenses || []).filter(e => e.category === '貯金使用').reduce((s, e) => s + e.amount, 0) : 0;
+      if (k <= todayKey) { totalChokin += cAmt - chokinUsed; totalJo1 += jAmt; }
       // 将来月も含めた予定累計（rowに使う）
-      cumulativeChokin += cAmt;
+      cumulativeChokin += cAmt - chokinUsed;
       cumulativeJo1 += jAmt;
 
       const isCurrent = (k === monthKey(state.currentYear, state.currentMonth));
-      chokinRows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: cAmt, cumulative: cumulativeChokin, isCurrent, isPast: k <= todayKey });
-      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, cumulative: cumulativeJo1, isCurrent, isPast: k <= todayKey });
+      chokinRows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: cAmt, used: chokinUsed, cumulative: cumulativeChokin, isCurrent, isPast: k <= todayKey });
+      jo1Rows.push({ label: `${y}/${String(m).padStart(2,'0')}`, amount: jAmt, used: 0, cumulative: cumulativeJo1, isCurrent, isPast: k <= todayKey });
     }
   }
 
@@ -1498,9 +1504,10 @@ function renderSavings() {
   const renderRows = (rows) => rows.map(r => `
     <div class="savings-row ${r.isCurrent ? 'current-month' : ''}">
       <span class="s-month" style="color:${r.isPast || r.isCurrent ? '' : '#bbb'}">${r.label}</span>
-      <span style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
+      <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
         <span class="s-amount" style="color:${r.isPast || r.isCurrent ? '' : '#bbb'}">${r.cumulative.toLocaleString()}円</span>
-        <span style="font-size:10px;color:#ccc;">+${r.amount.toLocaleString()}円</span>
+        <span style="font-size:10px;color:#aaa;">+${r.amount.toLocaleString()}円</span>
+        ${r.used > 0 ? `<span style="font-size:10px;color:#d4537a;font-weight:700;">-${r.used.toLocaleString()}円</span>` : ''}
       </span>
     </div>
   `).join('');
@@ -1620,6 +1627,11 @@ function handleDefaultEnter(e) {
 }
 
 // ===== FORMAT INCOME INPUT =====
+function formatGoalInput(el) {
+  const raw = (el.value || '').replace(/,/g, '');
+  if (/^\d+$/.test(raw)) el.value = parseInt(raw, 10).toLocaleString();
+}
+
 function formatNumberInput(el) {
   const raw = el.value.replace(/,/g, '');
   // マイナス記号や数字以外は保持しつつカンマ付与
