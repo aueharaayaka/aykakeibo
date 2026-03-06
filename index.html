@@ -43,7 +43,7 @@
   .screen.active { display: block; }
   #screen-settings.active {
     display: flex; flex-direction: column;
-    overflow-y: visible;
+    overflow: hidden;
   }
 
   /* ===== BOTTOM NAV ===== */
@@ -454,7 +454,7 @@
     設定
   </div>
 
-  <div class="settings-section" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+  <div class="settings-section" style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
     <div class="settings-label">デフォルトの設定</div>
     <div class="entry-form">
       <div class="select-wrap">
