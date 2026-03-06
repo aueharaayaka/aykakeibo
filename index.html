@@ -1464,8 +1464,8 @@ function renderSavings() {
   const defaultChokin = defaults.filter(e => e.category === '貯金').reduce((s, e) => s + e.amount, 0);
   const defaultJo1 = defaults.filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0);
 
-  // 集計範囲：2026年3月〜「現在月、3年先」まで動的に拡張
-  const endY = todayDate.getFullYear() + 3;
+  // 集計範囲：2026年3月〜2030年12月（固定）、それ以降は現在年+3年先まで
+  const endY = Math.max(2030, todayDate.getFullYear() + 3);
   const todayYear = todayDate.getFullYear();
   const todayMonth = todayDate.getMonth() + 1;
 
@@ -1477,8 +1477,8 @@ function renderSavings() {
   for (let y = 2026; y <= endY; y++) {
     const startM = (y === 2026) ? 3 : 1;
     const lastM = 12;
-    // その年が完了しているか（全月が過去）
-    const yearDone = (y < todayYear) || (y === todayYear && todayMonth === 12 && todayDate.getDate() >= 28);
+    // その年が完了しているか：現在年より前の年は折りたたみ
+    const yearDone = (y < todayYear);
     const yearChokinMonths = [];
     const yearJo1Months = [];
     let yearChokinTotal = 0, yearJo1Total = 0;
