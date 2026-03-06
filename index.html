@@ -1637,8 +1637,11 @@ async function syncUpload() {
 // クラウドから読み込む
 async function syncDownload() {
   showToast('読み込み中...');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
   try {
-    const res = await fetch(GAS_URL + '?t=' + Date.now());
+    const res = await fetch(GAS_URL + '?t=' + Date.now(), { signal: controller.signal });
+    clearTimeout(timer);
     const parsed = await res.json();
     if (!parsed || Object.keys(parsed).length === 0) {
       showToast('クラウドにデータがありません');
