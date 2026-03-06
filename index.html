@@ -1655,8 +1655,10 @@ async function syncUpload() {
   try {
     showToast('保存中...');
     const json = JSON.stringify(state);
+    // mode:'no-cors' でCORSエラーを回避（GASはPOST後にリダイレクトを返すため）
     await fetch(GAS_URL, {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: json
     });
@@ -1672,12 +1674,19 @@ async function syncDownload() {
   showToast('読み込み中...');
   clearTimeout(toastTimer); // 完了まで消えないようにする
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const timer = setTimeout(() => controller.abort(), 20000);
   try {
-    const res = await fetch(GAS_URL + '?t=' + Date.now(), { signal: controller.signal });
+    const res = await fetch(GAS_URL + '?action=load&t=' + Date.now(), { signal: controller.signal });
     clearTimeout(timer);
-    const parsed = await res.json();
-    if (!parsed || Object.keys(parsed).length === 0) {
+    const text = await res.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch(jsonErr) {
+      showToast('読み込みに失敗しました（データ形式エラー）');
+      return;
+    }
+    if (!parsed || typeof parsed !== 'object' || Object.keys(parsed).length === 0) {
       showToast('クラウドにデータがありません');
       return;
     }
@@ -1693,7 +1702,7 @@ async function syncDownload() {
     showToast('読み込みました！');
   } catch(e) {
     clearTimeout(timer);
-    showToast(e.name === 'AbortError' ? '読み込みタイムアウト（GASを確認してください）' : '読み込みに失敗しました');
+    showToast(e.name === 'AbortError' ? 'タイムアウト（GASが応答しません）' : '読み込みに失敗しました');
   }
 }
 
