@@ -335,11 +335,12 @@
     padding: 8px 14px; border-radius: 20px;
     cursor: pointer; font-size: 13px; font-weight: 700;
     background: var(--pink-bg); color: var(--text-body);
-    border: 2px solid transparent; transition: all 0.15s;
+    border: 2px solid transparent;
+    transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .filter-option.selected {
     background: var(--pink-main); color: white;
-    border-color: var(--pink-main);
+    border-color: var(--pink-main); transform: scale(1.04);
   }
   .filter-option .check { font-size: 12px; }
 
@@ -375,6 +376,39 @@
   }
   .header-icon-btn:active { opacity: 0.7; }
   .header-icon-btn svg { width: 22px; height: 22px; }
+
+  /* ===== SCREEN FADE-IN (画面切り替え) ===== */
+  @keyframes screenFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .screen-enter { animation: screenFadeIn 0.28s ease forwards; }
+
+  /* ===== NAV ICON BOUNCE ===== */
+  @keyframes navIconBounce { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
+  .nav-btn.nav-anim svg { animation: navIconBounce 0.38s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  /* ===== SHEET CLOSE (閉じるアニメーション) ===== */
+  @keyframes slideDown { from { transform: translateY(0); } to { transform: translateY(110%); } }
+  .dropdown-sheet.closing, .vcal-sheet.closing { animation: slideDown 0.22s ease forwards; }
+  @keyframes overlayFadeOut { to { background: rgba(0,0,0,0); } }
+  .dropdown-overlay.closing-overlay, .vcal-overlay.closing-overlay { animation: overlayFadeOut 0.22s ease forwards; pointer-events: none; }
+
+  /* ===== VCAL SHEET SLIDE UP ===== */
+  .vcal-sheet { animation: slideUp 0.25s ease; }
+
+  /* ===== ROW DELETE (行削除アニメーション) ===== */
+  @keyframes rowDeleteOut { 0% { opacity: 1; transform: translateX(0); max-height: 50px; } 100% { opacity: 0; transform: translateX(36px); max-height: 0; padding-top: 0; padding-bottom: 0; } }
+  .expense-row.deleting { animation: rowDeleteOut 0.25s ease forwards; overflow: hidden; }
+
+  /* ===== REGISTER BUTTON SUCCESS ===== */
+  @keyframes btnSuccess { 0%, 100% { box-shadow: 0 3px 10px rgba(240,81,138,0.35); transform: scale(1); } 45% { transform: scale(0.93); box-shadow: 0 0 0 5px rgba(240,81,138,0.22); } }
+  .register-btn.success { animation: btnSuccess 0.35s ease; }
+
+  /* ===== NUMBER POP (合計ポップ) ===== */
+  @keyframes numPop { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.1); } }
+  .num-pop { animation: numPop 0.28s ease; display: inline-block; }
+
+  /* ===== VCAL PICKER ITEM SPRING ===== */
+  .vcal-picker-item { transition: background 0.15s, color 0.15s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .vcal-picker-item.selected { transform: scale(1.06); }
 </style>
 </head>
 <body>
