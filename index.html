@@ -21,7 +21,7 @@
     --text-body: #333;
     --white: #ffffff;
     --shadow: 0 2px 8px rgba(240,81,138,0.12);
-    --radius: 14px;
+    --radius: 8px;
     --radius-sm: 8px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -168,6 +168,9 @@
   .expense-table.scrollable {
     max-height: 180px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
+  .expense-table.setting-list {
+    max-height: 300px;
+  }
   .expense-row {
     display: flex; align-items: center; padding: 6px 12px;
     border-bottom: 1px solid var(--pink-bg); gap: 6px;
@@ -300,9 +303,9 @@
   .dropdown-sheet h3 { font-size: 16px; font-weight: 900; color: var(--pink-main); margin-bottom: 14px; }
   .edit-form { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
   .edit-form-row { display: flex; gap: 8px; align-items: center; }
-  .edit-select { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 16px; -webkit-appearance: none; }
-  .edit-text { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 16px; }
-  .edit-amount { flex: 1; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 16px; text-align: right; }
+  .edit-select { flex: 1; padding: 10px 12px; border-radius: 8px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 16px; -webkit-appearance: none; }
+  .edit-text { flex: 1; padding: 10px 12px; border-radius: 8px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 16px; }
+  .edit-amount { flex: 1; padding: 10px 12px; border-radius: 8px; border: 2px solid var(--pink-border); background: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 16px; text-align: right; }
   .edit-save-btn { width: 100%; padding: 12px; border-radius: 20px; background: var(--pink-main); color: white; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 3px 10px rgba(240,81,138,0.35); }
   .filter-options-grid {
     display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0;
@@ -466,7 +469,7 @@
       <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="text" onkeydown="handleDefaultEnter(event)" oninput="formatNumberInput(this)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
-    <div class="expense-table scrollable" id="default-list">
+    <div class="expense-table scrollable setting-list" id="default-list">
       <div class="empty-state">デフォルト支出がありません</div>
     </div>
   </div>
