@@ -1670,8 +1670,9 @@ async function syncUpload() {
 // クラウドから読み込む
 async function syncDownload() {
   showToast('読み込み中...');
+  clearTimeout(toastTimer); // 完了まで消えないようにする
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 30000);
+  const timer = setTimeout(() => controller.abort(), 15000);
   try {
     const res = await fetch(GAS_URL + '?t=' + Date.now(), { signal: controller.signal });
     clearTimeout(timer);
@@ -1691,7 +1692,8 @@ async function syncDownload() {
     document.getElementById('backup-overlay').classList.remove('show');
     showToast('読み込みました！');
   } catch(e) {
-    showToast('読み込みに失敗しました');
+    clearTimeout(timer);
+    showToast(e.name === 'AbortError' ? '読み込みタイムアウト（GASを確認してください）' : '読み込みに失敗しました');
   }
 }
 
