@@ -450,11 +450,6 @@
       <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="food-total">0</span>
       <span class="total-unit" style="font-size:12px;">円</span>
     </div>
-    <div class="total-bar" style="flex:1;padding:6px 12px;">
-      <span class="total-label" style="font-size:12px;">駐輪場</span>
-      <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="parking-total">0</span>
-      <span class="total-unit" style="font-size:12px;">円</span>
-    </div>
   </div>
 
   <div class="total-bar">
@@ -511,12 +506,6 @@
       <div class="field-label">1日の食費</div>
       <div class="field-row">
         <div class="field-input-wrap"><input class="field-input" type="text" id="daily-food-input" placeholder="0" inputmode="numeric" oninput="formatSettingInput(this);saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
-      </div>
-    </div>
-    <div class="settings-section" style="flex:1;min-width:0;">
-      <div class="field-label">駐輪場</div>
-      <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input" type="text" id="parking-input" placeholder="0" inputmode="numeric" oninput="formatSettingInput(this);saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
       </div>
     </div>
   </div>
@@ -773,7 +762,6 @@ let state = {
   data: {}, // "YYYY-MM" => { income, expenses:[], overrides:{defId:{deleted,category,item,amount}} }
   settings: {
     dailyFood: 0,
-    parking: 0,
     goal: 0,
     defaults: [], // [{defId, category, item, amount}]
     vacations: [] // [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
@@ -891,16 +879,17 @@ function recalc() {
 
   const allExpenses = getAllExpenses();
   // 貯金使用・JO1使用は現金支出でないので所持金・残高から除外
-  // 食費マイナスは食費予算表示のみに反映し、所持金・残高には影響させない
-  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用' && e.category !== 'JO1使用' && !(e.category === '食費' && e.amount < 0));
+  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用' && e.category !== 'JO1使用');
   const totalExpenses = cashExpenses.reduce((s, e) => s + e.amount, 0);
   const holdings = incomeVal - totalExpenses;
 
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
   const dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
-  const parking = parseFloat(document.getElementById('parking-input').value) || 0;
+  // 食費マイナス分を食費予算から差し引く（所持金・残高にも反映）
+  const foodDiscount = allExpenses.filter(e => e.category === '食費' && e.amount < 0).reduce((s, e) => s + e.amount, 0);
+  const effectiveFoodBudget = Math.max(0, dailyFood * weekdays + foodDiscount);
   const nonFoodExpenses = cashExpenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
-  const balance = incomeVal - (nonFoodExpenses + dailyFood * weekdays + parking * weekdays);
+  const balance = incomeVal - (nonFoodExpenses + effectiveFoodBudget);
 
   document.getElementById('holdings-display').value = holdings.toLocaleString();
   document.getElementById('balance-display').value = balance.toLocaleString();
@@ -913,7 +902,6 @@ function renderAll() {
   const d = getCurrentData();
   document.getElementById('income-input').value = d.income ? Number(d.income).toLocaleString() : '';
   document.getElementById('daily-food-input').value = state.settings.dailyFood || '';
-  document.getElementById('parking-input').value = state.settings.parking || '';
   document.getElementById('savings-goal').value = state.settings.goal ? Number(state.settings.goal).toLocaleString() : '';
   recalc();
   renderExpenseList();
@@ -1137,7 +1125,7 @@ function renderTotalBar() {
   }
   document.getElementById('total-amount').textContent = total.toLocaleString();
 
-  // 平日数・食費・駐輪場合計
+  // 平日数・食費合計
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
   const dailyFoodRate = parseFloat(document.getElementById('daily-food-input').value) || 0;
   // 当月の食費カテゴリのマイナス登録分を食費合計から差し引く（プラスは無視）
@@ -1146,8 +1134,6 @@ function renderTotalBar() {
     .reduce((s, e) => s + e.amount, 0);
   const foodTotal = Math.max(0, dailyFoodRate * weekdays + foodDiscount);
   document.getElementById('food-total').textContent = foodTotal.toLocaleString();
-  const parkingRate = parseFloat(document.getElementById('parking-input').value) || 0;
-  document.getElementById('parking-total').textContent = (parkingRate * weekdays).toLocaleString();
 }
 
 // ===== FILTER SHEET =====
@@ -1175,7 +1161,6 @@ function selectFilter(cat) {
 // ===== SETTINGS =====
 function saveSettings() {
   state.settings.dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
-  state.settings.parking = parseFloat(document.getElementById('parking-input').value) || 0;
   state.settings.goal = parseFloat((document.getElementById('savings-goal').value||'').replace(/,/g,'')) || 0;
   saveData();
 }
@@ -1715,7 +1700,7 @@ function handleDefaultEnter(e) {
       if (id === 'income-input') { formatIncomeInput(e.target); recalc(); }
       else if (id === 'entry-amount' || id === 'default-amount') formatNumberInput(e.target);
       else if (id === 'savings-goal') { formatGoalInput(e.target); saveSettings(); renderSavings(); }
-      else if (id === 'daily-food-input' || id === 'parking-input') { e.target.value = e.target.value.replace(/[^0-9]/g, ''); saveSettings(); recalc(); }
+      else if (id === 'daily-food-input') { e.target.value = e.target.value.replace(/[^0-9]/g, ''); saveSettings(); recalc(); }
     }
   });
 })();
