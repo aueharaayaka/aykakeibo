@@ -1514,8 +1514,7 @@ function renderSavings() {
   const jo1YearGroups = [];
   let cumulativeChokin = 0, cumulativeJo1 = 0;
 
-  const dataYears = Object.keys(state.data).map(k => parseInt(k.split('-')[0]));
-  const startYear = dataYears.length > 0 ? Math.min(2026, ...dataYears) : 2026;
+  const startYear = 2026;
   for (let y = startYear; y <= endY; y++) {
     const startM = (y === 2026) ? 3 : 1;
     const lastM = 12;
