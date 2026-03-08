@@ -1624,10 +1624,13 @@ function renderSavings() {
   chokinList.innerHTML = renderYearGroups(chokinYearGroups);
   jo1List.innerHTML = renderYearGroups(jo1YearGroups);
 
-  // 今年のヘッダーを先頭にスクロール
+  // 今年のヘッダーを先頭にスクロール（レイアウト確定後に実行）
   const scrollToCurrentYear = (el) => {
-    const header = el.querySelector('.savings-year-header');
-    if (header) el.scrollTop = header.offsetTop;
+    requestAnimationFrame(() => {
+      const header = el.querySelector('.savings-year-header');
+      if (!header) { el.scrollTop = 0; return; }
+      el.scrollTop += header.getBoundingClientRect().top - el.getBoundingClientRect().top;
+    });
   };
   scrollToCurrentYear(chokinList);
   scrollToCurrentYear(jo1List);
