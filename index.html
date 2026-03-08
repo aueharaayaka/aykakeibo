@@ -415,6 +415,7 @@
 
 <!-- TOP SCREEN -->
 <div id="screen-top" class="screen active">
+  <div id="ptr-zone">
   <div class="month-header">
     <button class="month-nav-btn" onclick="changeMonth(-1)">
       <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -428,9 +429,6 @@
     </div>
     <button class="month-nav-btn" onclick="changeMonth(1)">
       <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
-    <button class="month-nav-btn" onclick="doRefresh()" id="refresh-btn">
-      <svg id="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
     </button>
   </div>
 
@@ -454,6 +452,8 @@
       <div class="field-input-wrap"><input class="field-input readonly" type="text" id="balance-display" value="0" readonly><span class="field-unit-inside">円</span></div>
     </div>
   </div>
+
+  </div><!-- /ptr-zone -->
 
   <div class="section-title">支出登録</div>
 
@@ -1921,14 +1921,43 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
 }
 
-// ===== REFRESH =====
-function doRefresh() {
-  const icon = document.getElementById('refresh-icon');
-  icon.style.animation = 'ptr-spin 0.6s linear infinite';
-  setTimeout(() => {
-    window.location.href = window.location.pathname + '?v=' + Date.now();
-  }, 500);
-}
+// ===== PULL TO REFRESH =====
+(function() {
+  let startY = 0;
+  let pulling = false;
+  const threshold = 80;
+  const indicator = document.getElementById('ptr-indicator');
+  const ptrZone = document.getElementById('ptr-zone');
+
+  ptrZone.addEventListener('touchstart', (e) => {
+    startY = e.touches[0].clientY;
+    pulling = true;
+  }, { passive: true });
+
+  ptrZone.addEventListener('touchmove', (e) => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 30) {
+      indicator.classList.add('visible');
+    } else {
+      indicator.classList.remove('visible');
+    }
+  }, { passive: true });
+
+  ptrZone.addEventListener('touchend', (e) => {
+    if (!pulling) return;
+    pulling = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy >= threshold) {
+      indicator.classList.add('refreshing');
+      setTimeout(() => {
+        window.location.href = window.location.pathname + '?v=' + Date.now();
+      }, 600);
+    } else {
+      indicator.classList.remove('visible');
+    }
+  }, { passive: true });
+})();
 </script>
 </body>
 </html>
