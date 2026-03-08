@@ -824,6 +824,21 @@ loadData();
 (state.settings.defaults || []).forEach((e, i) => {
   if (!e.defId) e.defId = 'def_legacy_' + i;
 });
+// ===== テスト用：2025年ダミーデータ（存在しない月のみ追加）=====
+for (let m = 1; m <= 12; m++) {
+  const k = monthKey(2025, m);
+  if (!state.data[k]) {
+    state.data[k] = {
+      income: 200000,
+      expenses: [
+        { id: 'test2025c' + m, date: `2025-${String(m).padStart(2,'0')}-25`, category: '貯金', item: 'テスト貯金', amount: 30000 },
+        { id: 'test2025j' + m, date: `2025-${String(m).padStart(2,'0')}-25`, category: 'JO1',  item: 'テストJO1',  amount: 10000 }
+      ],
+      overrides: {}
+    };
+  }
+}
+// ===== テスト用ここまで =====
 const today = new Date();
 // 常に今月を開く
 state.currentYear = today.getFullYear();
@@ -1498,7 +1513,9 @@ function renderSavings() {
   const jo1YearGroups = [];
   let cumulativeChokin = 0, cumulativeJo1 = 0;
 
-  for (let y = 2026; y <= endY; y++) {
+  const dataYears = Object.keys(state.data).map(k => parseInt(k.split('-')[0]));
+  const startYear = dataYears.length > 0 ? Math.min(2026, ...dataYears) : 2026;
+  for (let y = startYear; y <= endY; y++) {
     const startM = (y === 2026) ? 3 : 1;
     const lastM = 12;
     // その年が完了しているか：現在年より前の年は折りたたみ
