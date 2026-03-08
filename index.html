@@ -785,6 +785,37 @@ const JAPAN_HOLIDAYS = new Set([
   "2030-10-14",                                        // スポーツの日
   "2030-11-03","2030-11-04","2030-11-23",             // 文化の日・振替・勤労感謝の日
 ]);
+
+// ===== HOLIDAYS LOADER =====
+// キャッシュから同期的に祝日を追加（初回レンダリング前に反映）
+function loadCachedHolidays() {
+  try {
+    const cached = localStorage.getItem('kakeibo_holidays');
+    if (cached) {
+      JSON.parse(cached).forEach(d => JAPAN_HOLIDAYS.add(d));
+    }
+  } catch(e) {}
+}
+
+// APIから最新祝日を取得してキャッシュ更新（バックグラウンド）
+// 出典: https://holidays-jp.github.io （内閣府データ準拠）
+async function fetchHolidays() {
+  try {
+    const res = await fetch('https://holidays-jp.github.io/api/v1/date.json');
+    if (!res.ok) return;
+    const data = await res.json();
+    const dates = Object.keys(data);
+    const before = JAPAN_HOLIDAYS.size;
+    // 日本時間のYYYY-MM-DD形式のキーとして追加
+    dates.forEach(d => JAPAN_HOLIDAYS.add(d));
+    localStorage.setItem('kakeibo_holidays', JSON.stringify(dates));
+    // 新しい祝日データで再描画
+    if (JAPAN_HOLIDAYS.size !== before) renderAll();
+  } catch(e) {
+    // オフライン時はハードコード＋キャッシュをそのまま使用
+  }
+}
+
 // ===== STATE =====
 const MONTHS_JP = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 const MONTHS_EN = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
@@ -820,26 +851,12 @@ function loadData() {
 }
 
 // ===== INIT =====
+loadCachedHolidays(); // キャッシュ済み祝日を同期的に反映
 loadData();
 // 既存データにdefIdがない場合は補完
 (state.settings.defaults || []).forEach((e, i) => {
   if (!e.defId) e.defId = 'def_legacy_' + i;
 });
-// ===== テスト用：2025年ダミーデータ（存在しない月のみ追加）=====
-for (let m = 1; m <= 12; m++) {
-  const k = monthKey(2025, m);
-  if (!state.data[k]) {
-    state.data[k] = {
-      income: 200000,
-      expenses: [
-        { id: 'test2025c' + m, date: `2025-${String(m).padStart(2,'0')}-25`, category: '貯金', item: 'テスト貯金', amount: 30000 },
-        { id: 'test2025j' + m, date: `2025-${String(m).padStart(2,'0')}-25`, category: 'JO1',  item: 'テストJO1',  amount: 10000 }
-      ],
-      overrides: {}
-    };
-  }
-}
-// ===== テスト用ここまで =====
 const today = new Date();
 // 常に今月を開く
 state.currentYear = today.getFullYear();
@@ -850,6 +867,7 @@ if (state.currentYear < 2026 || (state.currentYear === 2026 && state.currentMont
 }
 // 上限なし（2026年3月以降であれば何年でも利用可能）
 renderAll();
+fetchHolidays(); // バックグラウンドで最新祝日をAPIから取得
 
 // ===== MONTH KEY =====
 function monthKey(y, m) { return `${y}-${String(m).padStart(2,'0')}`; }
