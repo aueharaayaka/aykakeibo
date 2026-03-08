@@ -1912,8 +1912,7 @@ function showToast(msg) {
     if (dy >= threshold) {
       indicator.classList.add('refreshing');
       setTimeout(() => {
-        localStorage.clear();
-        location.reload();
+        window.location.href = window.location.pathname + '?v=' + Date.now();
       }, 600);
     } else {
       indicator.classList.remove('visible');
