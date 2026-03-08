@@ -1886,7 +1886,7 @@ function showToast(msg) {
 
   document.addEventListener('touchstart', (e) => {
     const screen = getActiveScreen();
-    if (!screen) return;
+    if (!screen || screen.id !== 'screen-top') return;
     if (screen.scrollTop === 0) {
       startY = e.touches[0].clientY;
       pulling = true;
