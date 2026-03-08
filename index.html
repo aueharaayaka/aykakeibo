@@ -304,7 +304,7 @@
   .savings-row.current-month { background: #fff0f5; }
   .savings-row.current-month .s-amount { color: var(--pink-main); }
   .savings-year-header { background: var(--text-dark); padding: 5px 10px; }
-  .savings-year-row { background: #e8749f; border-bottom: 2px solid #e8749f; padding: 3px 10px; }
+  .savings-year-row { background: #f5c8d8; border-bottom: 2px solid #f5c8d8; padding: 3px 10px; }
   .savings-row .s-year-label { font-size: 13px; font-weight: 700; color: #fff !important; }
 
   /* ===== DROPDOWN OVERLAY ===== */
@@ -1598,10 +1598,7 @@ function renderSavings() {
       return `
         <div class="savings-row savings-year-row">
           <span class="s-month s-year-label">${g.year}</span>
-          <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
-            <span class="s-amount">${g.cumulativeAtEnd.toLocaleString()}円</span>
-            <span style="font-size:10px;color:#aaa;">年計+${g.yearTotal.toLocaleString()}円</span>
-          </span>
+          <span class="s-amount">${g.cumulativeAtEnd.toLocaleString()}円</span>
         </div>`;
     } else {
       // 進行中の年：年ヘッダー行＋月行を表示
@@ -1622,8 +1619,18 @@ function renderSavings() {
     }
   }).join('');
 
-  document.getElementById('savings-chokin-list').innerHTML = renderYearGroups(chokinYearGroups);
-  document.getElementById('savings-jo1-list').innerHTML = renderYearGroups(jo1YearGroups);
+  const chokinList = document.getElementById('savings-chokin-list');
+  const jo1List = document.getElementById('savings-jo1-list');
+  chokinList.innerHTML = renderYearGroups(chokinYearGroups);
+  jo1List.innerHTML = renderYearGroups(jo1YearGroups);
+
+  // 今年のヘッダーを先頭にスクロール
+  const scrollToCurrentYear = (el) => {
+    const header = el.querySelector('.savings-year-header');
+    if (header) el.scrollTop = header.offsetTop;
+  };
+  scrollToCurrentYear(chokinList);
+  scrollToCurrentYear(jo1List);
 }
 
 // ===== SCREEN NAV =====
