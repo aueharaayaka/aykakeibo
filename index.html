@@ -615,25 +615,24 @@
 
   <div style="display:flex;gap:10px;flex-shrink:0;">
     <div class="field-group" style="flex:1;min-width:0;">
-      <div class="field-label">目標金額</div>
-      <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input" type="text" id="savings-goal" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
-      </div>
-    </div>
-    <div class="field-group" style="flex:1;min-width:0;">
       <div class="field-label">NISA初期残高</div>
       <div class="field-row">
         <div class="field-input-wrap"><input class="field-input" type="text" id="nisa-initial-input" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
       </div>
     </div>
-  </div>
-    <div class="progress-wrap" id="savings-progress-wrap" style="display:none">
-      <div class="progress-label">
-        <span id="progress-pct">0%</span>
-        <span id="progress-detail"></span>
+    <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">目標金額</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input" type="text" id="savings-goal" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
       </div>
-      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
     </div>
+  </div>
+  <div class="progress-wrap" id="savings-progress-wrap" style="display:none;flex-shrink:0;">
+    <div class="progress-label">
+      <span id="progress-pct">0%</span>
+      <span id="progress-detail"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
   </div>
 
   <div class="savings-tabs">
@@ -1649,11 +1648,12 @@ function renderSavings() {
 
   const goal = state.settings.goal || 0;
   if (goal > 0) {
-    const pct = Math.min(100, Math.round(totalChokin / goal * 100));
+    const currentTotal = totalChokin + totalNisa;
+    const pct = Math.min(100, Math.round(currentTotal / goal * 100));
     document.getElementById('savings-progress-wrap').style.display = 'block';
     document.getElementById('progress-fill').style.width = pct + '%';
     document.getElementById('progress-pct').textContent = pct + '%';
-    document.getElementById('progress-detail').textContent = `${totalChokin.toLocaleString()} / ${goal.toLocaleString()}円`;
+    document.getElementById('progress-detail').textContent = `${currentTotal.toLocaleString()} / ${goal.toLocaleString()}円`;
   } else {
     document.getElementById('savings-progress-wrap').style.display = 'none';
   }
