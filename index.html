@@ -621,6 +621,14 @@
       </div>
     </div>
     <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">貯金+NISA予定合計</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-combined-planned" value="0" readonly><span class="field-unit-inside">円</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-shrink:0;">
+    <div class="field-group" style="flex:1;min-width:0;">
       <div class="field-label">目標金額</div>
       <div class="field-row">
         <div class="field-input-wrap"><input class="field-input" type="text" id="savings-goal" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
@@ -1652,7 +1660,8 @@ function renderSavings() {
   document.getElementById('savings-jo1-current').value    = totalJo1.toLocaleString();
   document.getElementById('savings-chokin-planned').value = plannedChokin.toLocaleString();
   document.getElementById('savings-nisa-planned').value   = plannedNisa.toLocaleString();
-  document.getElementById('savings-jo1-planned').value    = plannedJo1.toLocaleString();
+  document.getElementById('savings-jo1-planned').value            = plannedJo1.toLocaleString();
+  document.getElementById('savings-combined-planned').value = (plannedChokin + plannedNisa).toLocaleString();
 
   const goal = state.settings.goal || 0;
   if (goal > 0) {
