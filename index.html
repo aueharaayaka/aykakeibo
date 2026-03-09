@@ -231,6 +231,8 @@
     .tag-sonota  { background: #f9d0de; color: #d4537a; }
   .tag-chokin-use { background: #ede0ff; color: #7a3ad4; border: 1.5px solid #c9a0f0; }
   .tag-jo1-use    { background: #ccd8ff; color: #3a50d4; border: 1.5px solid #99b0f0; }
+  .tag-nisa       { background: #d8f5e8; color: #2a8a5a; }
+  .tag-nisa-use   { background: #b8ead4; color: #1a6a42; border: 1.5px solid #7ad4aa; }
 
   /* ===== VACATION ===== */
   .vacation-row {
@@ -289,10 +291,12 @@
     font-size: 24px; font-weight: 700; color: var(--pink-main); margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px;
   }
-  .savings-columns { display: flex; gap: 12px; margin-top: 16px; flex: 1; min-height: 0; overflow: hidden; }
-  .savings-col { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  .savings-col-title { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; flex-shrink: 0; }
-  .savings-table { background: var(--white); border-radius: var(--radius); overflow-y: auto; flex: 1; min-height: 0; -webkit-overflow-scrolling: touch; box-shadow: var(--shadow); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .savings-tabs { display: flex; gap: 4px; flex-shrink: 0; margin-top: 12px; margin-bottom: 8px; }
+  .savings-tab { flex: 1; padding: 7px 0; font-size: 13px; font-weight: 700; font-family: 'LINESeedJP', sans-serif; border: none; border-radius: var(--radius); background: var(--pink-border); color: var(--text-dark); cursor: pointer; transition: all 0.2s; }
+  .savings-tab.active { background: var(--pink-main); color: white; }
+  .savings-swipe-wrap { flex: 1; min-height: 0; overflow: hidden; }
+  .savings-swipe-container { display: flex; width: 300%; height: 100%; transition: transform 0.3s ease; }
+  .savings-table { background: var(--white); border-radius: var(--radius); overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; box-shadow: var(--shadow); padding-bottom: env(safe-area-inset-bottom, 0px); flex: 0 0 33.333%; }
   .savings-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 10px; border-bottom: 1px solid var(--pink-bg);
@@ -465,9 +469,11 @@
         <option value="外食">外食</option>
         <option value="交通費">交通費</option>
         <option value="貯金">貯金</option>
+        <option value="NISA">NISA</option>
         <option value="JO1">JO1</option>
         <option value="その他">その他</option>
         <option value="貯金使用">貯金使用</option>
+        <option value="NISA使用">NISA使用</option>
         <option value="JO1使用">JO1使用</option>
       </select>
       <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -522,9 +528,11 @@
           <option value="外食">外食</option>
           <option value="交通費">交通費</option>
           <option value="貯金">貯金</option>
+          <option value="NISA">NISA</option>
           <option value="JO1">JO1</option>
           <option value="その他">その他</option>
           <option value="貯金使用">貯金使用</option>
+          <option value="NISA使用">NISA使用</option>
           <option value="JO1使用">JO1使用</option>
         </select>
         <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -562,28 +570,43 @@
 
   <div style="display:flex;gap:10px;flex-shrink:0;margin-bottom:0;">
     <div class="field-group" style="flex:1;min-width:0;">
-      <div class="field-label">貯金 現在の合計</div>
+      <div class="field-label">現在貯金</div>
       <div class="field-row">
         <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-chokin-current" value="0" readonly><span class="field-unit-inside">円</span></div>
       </div>
     </div>
     <div class="field-group" style="flex:1;min-width:0;">
-      <div class="field-label">JO1 現在の合計</div>
+      <div class="field-label">予定合計</div>
       <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-jo1-current" value="0" readonly><span class="field-unit-inside">円</span></div>
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-chokin-planned" value="0" readonly><span class="field-unit-inside">円</span></div>
       </div>
     </div>
   </div>
 
   <div style="display:flex;gap:10px;flex-shrink:0;margin-bottom:0;">
     <div class="field-group" style="flex:1;min-width:0;">
-      <div class="field-label">貯金 予定の合計</div>
+      <div class="field-label">現在NISA</div>
       <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-chokin-planned" value="0" readonly><span class="field-unit-inside">円</span></div>
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-nisa-current" value="0" readonly><span class="field-unit-inside">円</span></div>
       </div>
     </div>
     <div class="field-group" style="flex:1;min-width:0;">
-      <div class="field-label">JO1 予定の合計</div>
+      <div class="field-label">NISA予定合計</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-nisa-planned" value="0" readonly><span class="field-unit-inside">円</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-shrink:0;margin-bottom:0;">
+    <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">現在JO1</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-jo1-current" value="0" readonly><span class="field-unit-inside">円</span></div>
+      </div>
+    </div>
+    <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">JO1予定合計</div>
       <div class="field-row">
         <div class="field-input-wrap"><input class="field-input readonly" type="text" id="savings-jo1-planned" value="0" readonly><span class="field-unit-inside">円</span></div>
       </div>
@@ -604,13 +627,15 @@
     </div>
   </div>
 
-  <div class="savings-columns">
-    <div class="savings-col">
-      <div class="savings-col-title">貯金</div>
+  <div class="savings-tabs">
+    <button class="savings-tab active" onclick="switchSavingsTab(0)">貯金</button>
+    <button class="savings-tab" onclick="switchSavingsTab(1)">NISA</button>
+    <button class="savings-tab" onclick="switchSavingsTab(2)">JO1</button>
+  </div>
+  <div class="savings-swipe-wrap">
+    <div class="savings-swipe-container" id="savings-swipe-container">
       <div class="savings-table" id="savings-chokin-list"></div>
-    </div>
-    <div class="savings-col">
-      <div class="savings-col-title">JO1</div>
+      <div class="savings-table" id="savings-nisa-list"></div>
       <div class="savings-table" id="savings-jo1-list"></div>
     </div>
   </div>
@@ -714,9 +739,11 @@
           <option value="外食">外食</option>
           <option value="交通費">交通費</option>
           <option value="貯金">貯金</option>
+          <option value="NISA">NISA</option>
           <option value="JO1">JO1</option>
           <option value="その他">その他</option>
           <option value="貯金使用">貯金使用</option>
+          <option value="NISA使用">NISA使用</option>
           <option value="JO1使用">JO1使用</option>
         </select>
       </div>
@@ -953,8 +980,8 @@ function recalc() {
   saveData();
 
   const allExpenses = getAllExpenses();
-  // 貯金使用・JO1使用は現金支出でないので所持金・残高から除外
-  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用' && e.category !== 'JO1使用');
+  // 貯金使用・NISA使用・JO1使用は現金支出でないので所持金・残高から除外
+  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用');
   const totalExpenses = cashExpenses.reduce((s, e) => s + e.amount, 0);
   const holdings = incomeVal - totalExpenses;
 
@@ -1008,7 +1035,7 @@ function goToToday() {
 
 // ===== TAG CLASS =====
 function tagClass(cat) {
-  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','JO1':'tag-jo1','その他':'tag-sonota','貯金使用':'tag-chokin-use','JO1使用':'tag-jo1-use' };
+  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','NISA':'tag-nisa','JO1':'tag-jo1','その他':'tag-sonota','貯金使用':'tag-chokin-use','NISA使用':'tag-nisa-use','JO1使用':'tag-jo1-use' };
   return map[cat] || 'tag-sonota';
 }
 
@@ -1215,7 +1242,7 @@ function renderTotalBar() {
 
 // ===== FILTER SHEET =====
 function openFilterSheet() {
-  const categories = ['全体', '食費', '外食', '交通費', '貯金', 'JO1', 'その他', '貯金使用', 'JO1使用'];
+  const categories = ['全体', '食費', '外食', '交通費', '貯金', 'NISA', 'JO1', 'その他', '貯金使用', 'NISA使用', 'JO1使用'];
   const opts = document.getElementById('filter-options');
   opts.innerHTML = categories.map(c => `
     <div class="filter-option ${c === state.totalFilter ? 'selected' : ''}" onclick="selectFilter('${c}')">
@@ -1523,93 +1550,90 @@ function renderDefaultList() {
 
 // ===== SAVINGS =====
 function renderSavings() {
-  let totalChokin = 0, totalJo1 = 0;
-  let plannedChokin = 0, plannedJo1 = 0;
+  let totalChokin = 0, totalNisa = 0, totalJo1 = 0;
+  let plannedChokin = 0, plannedNisa = 0, plannedJo1 = 0;
   const todayDate = new Date();
   const todayKey = monthKey(todayDate.getFullYear(), todayDate.getMonth() + 1);
 
   const defaults = state.settings.defaults || [];
-  const defaultChokin = defaults.filter(e => e.category === '貯金').reduce((s, e) => s + e.amount, 0);
-  const defaultJo1 = defaults.filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0);
 
   // 集計範囲：2026年3月〜2030年12月（固定）、それ以降は現在年+3年先まで
   const endY = Math.max(2030, todayDate.getFullYear() + 3);
   const todayYear = todayDate.getFullYear();
-  const todayMonth = todayDate.getMonth() + 1;
 
-  // 年別にグループ化した行データ
   const chokinYearGroups = [];
+  const nisaYearGroups = [];
   const jo1YearGroups = [];
-  let cumulativeChokin = 0, cumulativeJo1 = 0;
+  let cumulativeChokin = 0, cumulativeNisa = 0, cumulativeJo1 = 0;
 
   const startYear = 2026;
   for (let y = startYear; y <= endY; y++) {
     const startM = (y === 2026) ? 3 : 1;
-    const lastM = 12;
-    // その年が完了しているか：現在年より前の年は折りたたみ
     const yearDone = (y < todayYear);
-    const yearChokinMonths = [];
-    const yearJo1Months = [];
-    let yearChokinTotal = 0, yearJo1Total = 0;
-    let yearChokinUsed = 0, yearJo1Used = 0;
+    const yearChokinMonths = [], yearNisaMonths = [], yearJo1Months = [];
     let hasCurrentMonth = false;
 
-    for (let m = startM; m <= lastM; m++) {
+    for (let m = startM; m <= 12; m++) {
       const k = monthKey(y, m);
       const d = state.data[k];
       const overrides = d ? (d.overrides || {}) : {};
 
-      // デフォルト分（override込み）
-      let defC = 0, defJ = 0;
+      let defC = 0, defN = 0, defJ = 0;
       defaults.forEach(e => {
         const eff = getEffectiveDefault(e, overrides);
         if (!eff) return;
         if (eff.category === '貯金') defC += eff.amount;
+        if (eff.category === 'NISA') defN += eff.amount;
         if (eff.category === 'JO1') defJ += eff.amount;
       });
 
-      // 月別個別支出分
       const indivC = d ? (d.expenses || []).filter(e => e.category === '貯金').reduce((s, e) => s + e.amount, 0) : 0;
+      const indivN = d ? (d.expenses || []).filter(e => e.category === 'NISA').reduce((s, e) => s + e.amount, 0) : 0;
       const indivJ = d ? (d.expenses || []).filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0) : 0;
 
       const cAmt = defC + indivC;
+      const nAmt = defN + indivN;
       const jAmt = defJ + indivJ;
 
       const chokinUsedM = d ? (d.expenses || []).filter(e => e.category === '貯金使用').reduce((s, e) => s + e.amount, 0) : 0;
-      const jo1UsedM = d ? (d.expenses || []).filter(e => e.category === 'JO1使用').reduce((s, e) => s + e.amount, 0) : 0;
+      const nisaUsedM   = d ? (d.expenses || []).filter(e => e.category === 'NISA使用').reduce((s, e) => s + e.amount, 0) : 0;
+      const jo1UsedM    = d ? (d.expenses || []).filter(e => e.category === 'JO1使用').reduce((s, e) => s + e.amount, 0) : 0;
 
       plannedChokin += cAmt - chokinUsedM;
-      plannedJo1 += jAmt - jo1UsedM;
-      if (k <= todayKey) { totalChokin += cAmt - chokinUsedM; totalJo1 += jAmt - jo1UsedM; }
+      plannedNisa   += nAmt - nisaUsedM;
+      plannedJo1    += jAmt - jo1UsedM;
+      if (k <= todayKey) {
+        totalChokin += cAmt - chokinUsedM;
+        totalNisa   += nAmt - nisaUsedM;
+        totalJo1    += jAmt - jo1UsedM;
+      }
       cumulativeChokin += cAmt - chokinUsedM;
-      cumulativeJo1 += jAmt - jo1UsedM;
-
-      yearChokinTotal += cAmt - chokinUsedM;
-      yearJo1Total += jAmt - jo1UsedM;
-      yearChokinUsed += chokinUsedM;
-      yearJo1Used += jo1UsedM;
+      cumulativeNisa   += nAmt - nisaUsedM;
+      cumulativeJo1    += jAmt - jo1UsedM;
 
       const isCurrent = (k === monthKey(state.currentYear, state.currentMonth));
       if (isCurrent) hasCurrentMonth = true;
       const isPast = k <= todayKey;
+      const label = `${String(m).padStart(2,'0')}月`;
 
-      yearChokinMonths.push({ label: `${String(m).padStart(2,'0')}月`, amount: cAmt, used: chokinUsedM, cumulative: cumulativeChokin, isCurrent, isPast });
-      yearJo1Months.push({ label: `${String(m).padStart(2,'0')}月`, amount: jAmt, used: jo1UsedM, cumulative: cumulativeJo1, isCurrent, isPast });
+      yearChokinMonths.push({ label, amount: cAmt, used: chokinUsedM, cumulative: cumulativeChokin, isCurrent, isPast });
+      yearNisaMonths.push(  { label, amount: nAmt, used: nisaUsedM,   cumulative: cumulativeNisa,   isCurrent, isPast });
+      yearJo1Months.push(   { label, amount: jAmt, used: jo1UsedM,    cumulative: cumulativeJo1,    isCurrent, isPast });
     }
 
-    chokinYearGroups.push({ year: y, done: yearDone, months: yearChokinMonths, yearTotal: yearChokinTotal, cumulativeAtEnd: cumulativeChokin, hasCurrentMonth });
-    jo1YearGroups.push({ year: y, done: yearDone, months: yearJo1Months, yearTotal: yearJo1Total, cumulativeAtEnd: cumulativeJo1, hasCurrentMonth });
+    chokinYearGroups.push({ year: y, done: yearDone, months: yearChokinMonths, cumulativeAtEnd: cumulativeChokin, hasCurrentMonth });
+    nisaYearGroups.push(  { year: y, done: yearDone, months: yearNisaMonths,   cumulativeAtEnd: cumulativeNisa,   hasCurrentMonth });
+    jo1YearGroups.push(   { year: y, done: yearDone, months: yearJo1Months,    cumulativeAtEnd: cumulativeJo1,    hasCurrentMonth });
   }
 
-  const currentTotal = totalChokin + totalJo1;
-  const plannedTotal = plannedChokin + plannedJo1;
-  const goal = state.settings.goal || 0;
-
   document.getElementById('savings-chokin-current').value = totalChokin.toLocaleString();
-  document.getElementById('savings-jo1-current').value = totalJo1.toLocaleString();
+  document.getElementById('savings-nisa-current').value   = totalNisa.toLocaleString();
+  document.getElementById('savings-jo1-current').value    = totalJo1.toLocaleString();
   document.getElementById('savings-chokin-planned').value = plannedChokin.toLocaleString();
-  document.getElementById('savings-jo1-planned').value = plannedJo1.toLocaleString();
+  document.getElementById('savings-nisa-planned').value   = plannedNisa.toLocaleString();
+  document.getElementById('savings-jo1-planned').value    = plannedJo1.toLocaleString();
 
+  const goal = state.settings.goal || 0;
   if (goal > 0) {
     const pct = Math.min(100, Math.round(totalChokin / goal * 100));
     document.getElementById('savings-progress-wrap').style.display = 'block';
@@ -1622,14 +1646,12 @@ function renderSavings() {
 
   const renderYearGroups = (groups) => groups.map(g => {
     if (g.done) {
-      // 年が終了した場合：年行のみ表示（累計継続）
       return `
         <div class="savings-row savings-year-row">
           <span class="s-month s-year-label">${g.year}</span>
           <span class="s-amount">${g.cumulativeAtEnd.toLocaleString()}円</span>
         </div>`;
     } else {
-      // 進行中の年：年ヘッダー行＋月行を表示
       const yearHeader = `
         <div class="savings-row savings-year-header">
           <span class="s-month s-year-label">${g.year}年</span>
@@ -1648,11 +1670,12 @@ function renderSavings() {
   }).join('');
 
   const chokinList = document.getElementById('savings-chokin-list');
-  const jo1List = document.getElementById('savings-jo1-list');
+  const nisaList   = document.getElementById('savings-nisa-list');
+  const jo1List    = document.getElementById('savings-jo1-list');
   chokinList.innerHTML = renderYearGroups(chokinYearGroups);
-  jo1List.innerHTML = renderYearGroups(jo1YearGroups);
+  nisaList.innerHTML   = renderYearGroups(nisaYearGroups);
+  jo1List.innerHTML    = renderYearGroups(jo1YearGroups);
 
-  // 今年のヘッダーを先頭にスクロール（レイアウト確定後に実行）
   const scrollToCurrentYear = (el) => {
     requestAnimationFrame(() => {
       const header = el.querySelector('.savings-year-header');
@@ -1661,8 +1684,37 @@ function renderSavings() {
     });
   };
   scrollToCurrentYear(chokinList);
+  scrollToCurrentYear(nisaList);
   scrollToCurrentYear(jo1List);
 }
+
+// ===== SAVINGS TAB =====
+let savingsTabIndex = 0;
+
+function switchSavingsTab(idx) {
+  savingsTabIndex = idx;
+  document.getElementById('savings-swipe-container').style.transform = `translateX(-${idx * 33.333}%)`;
+  document.querySelectorAll('.savings-tab').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+  });
+}
+
+(function() {
+  let startX = 0, startY = 0;
+  const screen = document.getElementById('screen-savings');
+  screen.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  screen.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      if (dx < 0 && savingsTabIndex < 2) switchSavingsTab(savingsTabIndex + 1);
+      else if (dx > 0 && savingsTabIndex > 0) switchSavingsTab(savingsTabIndex - 1);
+    }
+  }, { passive: true });
+})();
 
 // ===== SCREEN NAV =====
 function showScreen(name) {
