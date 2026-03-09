@@ -613,11 +613,20 @@
     </div>
   </div>
 
-  <div class="field-group" style="flex-shrink:0;">
-    <div class="field-label">目標金額</div>
-    <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input" type="text" id="savings-goal" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
+  <div style="display:flex;gap:10px;flex-shrink:0;">
+    <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">目標金額</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input" type="text" id="savings-goal" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
+      </div>
     </div>
+    <div class="field-group" style="flex:1;min-width:0;">
+      <div class="field-label">NISA初期残高</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input" type="text" id="nisa-initial-input" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
+      </div>
+    </div>
+  </div>
     <div class="progress-wrap" id="savings-progress-wrap" style="display:none">
       <div class="progress-label">
         <span id="progress-pct">0%</span>
@@ -863,6 +872,7 @@ let state = {
   settings: {
     dailyFood: 0,
     goal: 0,
+    nisaInitial: 0,
     defaults: [], // [{defId, category, item, amount}]
     vacations: [] // [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
   }
@@ -1005,6 +1015,7 @@ function renderAll() {
   document.getElementById('income-input').value = d.income ? Number(d.income).toLocaleString() : '';
   document.getElementById('daily-food-input').value = state.settings.dailyFood || '';
   document.getElementById('savings-goal').value = state.settings.goal ? Number(state.settings.goal).toLocaleString() : '';
+  document.getElementById('nisa-initial-input').value = state.settings.nisaInitial ? Number(state.settings.nisaInitial).toLocaleString() : '';
   recalc();
   renderExpenseList();
   renderDefaultList();
@@ -1266,6 +1277,7 @@ function selectFilter(cat) {
 function saveSettings() {
   state.settings.dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
   state.settings.goal = parseFloat((document.getElementById('savings-goal').value||'').replace(/,/g,'')) || 0;
+  state.settings.nisaInitial = parseFloat((document.getElementById('nisa-initial-input').value||'').replace(/,/g,'')) || 0;
   saveData();
 }
 
@@ -1550,10 +1562,12 @@ function renderDefaultList() {
 
 // ===== SAVINGS =====
 function renderSavings() {
-  let totalChokin = 0, totalNisa = 0, totalJo1 = 0;
-  let plannedChokin = 0, plannedNisa = 0, plannedJo1 = 0;
   const todayDate = new Date();
   const todayKey = monthKey(todayDate.getFullYear(), todayDate.getMonth() + 1);
+  const nisaInitial = state.settings.nisaInitial || 0;
+
+  let totalChokin = 0, totalNisa = nisaInitial, totalJo1 = 0;
+  let plannedChokin = 0, plannedNisa = nisaInitial, plannedJo1 = 0;
 
   const defaults = state.settings.defaults || [];
 
@@ -1564,7 +1578,7 @@ function renderSavings() {
   const chokinYearGroups = [];
   const nisaYearGroups = [];
   const jo1YearGroups = [];
-  let cumulativeChokin = 0, cumulativeNisa = 0, cumulativeJo1 = 0;
+  let cumulativeChokin = 0, cumulativeNisa = nisaInitial, cumulativeJo1 = 0;
 
   const startYear = 2026;
   for (let y = startYear; y <= endY; y++) {
