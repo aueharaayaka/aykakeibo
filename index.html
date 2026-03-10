@@ -161,21 +161,21 @@
   }
   .text-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
   .amount-input {
-    flex: 0 0 70px; min-width: 0; padding: 9px 6px; border-radius: var(--radius-sm);
+    flex: 0 0 90px; min-width: 0; padding: 9px 8px; border-radius: var(--radius-sm);
     border: 1.5px solid var(--pink-border); background: var(--white);
     font-family: 'LINESeedJP', sans-serif; font-size: 16px; color: var(--text-body);
     text-align: left; box-shadow: var(--shadow);
   }
   .amount-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
   .register-btn {
-    flex: 0 0 auto; padding: 9px 12px; border-radius: 20px; background: var(--pink-main);
+    flex: 0 0 auto; padding: 9px 8px; border-radius: 20px; background: var(--pink-main);
     color: white; font-family: 'LINESeedJP', sans-serif; font-size: 12px; font-weight: 700;
     border: none; cursor: pointer; white-space: nowrap; transition: all 0.2s;
     box-shadow: 0 3px 10px rgba(240,81,138,0.35);
   }
   .register-btn:active { transform: scale(0.95); }
-  .sign-btn { flex: 0 0 auto; padding: 9px 10px; background: var(--white); color: var(--text-dark); font-family: 'LINESeedJP', sans-serif; font-size: 15px; font-weight: 700; border: 1.5px solid var(--pink-border); cursor: pointer; border-radius: var(--radius-sm) 0 0 var(--radius-sm); border-right: none; }
-  .amount-group { display: flex; align-items: stretch; flex: 0 0 auto; }
+  .sign-btn { flex: 0 0 auto; padding: 9px 6px; background: var(--white); color: var(--text-dark); font-family: 'LINESeedJP', sans-serif; font-size: 15px; font-weight: 700; border: 1.5px solid var(--pink-border); cursor: pointer; border-radius: var(--radius-sm) 0 0 var(--radius-sm); border-right: none; }
+  .amount-group { display: flex; align-items: stretch; flex: 0 0 auto; min-width: 0; overflow: hidden; }
   .amount-group .amount-input { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; box-shadow: none; }
   .amount-group .edit-amount { border-radius: 0 8px 8px 0; flex: 1; }
   .amount-group .sign-btn { box-shadow: none; }
