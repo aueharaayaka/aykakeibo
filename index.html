@@ -509,6 +509,11 @@
     <span class="total-amount" id="total-amount">0</span>
     <span class="total-unit">円</span>
   </div>
+  <div class="total-bar" style="margin-top:0;">
+    <span class="total-label" style="font-size:12px;">貯金残高</span>
+    <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="home-savings-amount">0</span>
+    <span class="total-unit" style="font-size:12px;">円</span>
+  </div>
 </div>
 
 <!-- SETTINGS SCREEN -->
@@ -1258,6 +1263,30 @@ function renderTotalBar() {
   const foodTotal = Math.max(0, dailyFoodRate * weekdays + foodDiscount);
   document.getElementById('food-total').textContent = foodTotal.toLocaleString();
   document.getElementById('weekday-count').textContent = weekdays;
+
+  // 貯金累計（表示月まで）
+  const nisaInitial = state.settings.nisaInitial || 0;
+  let cumChokin = 0, cumNisa = nisaInitial;
+  const defs = state.settings.defaults || [];
+  const displayKey = monthKey(state.currentYear, state.currentMonth);
+  outer: for (let y = 2026; y <= state.currentYear; y++) {
+    const startM = (y === 2026) ? 3 : 1;
+    for (let m = startM; m <= 12; m++) {
+      const k = monthKey(y, m);
+      const md = state.data[k];
+      const ov = md ? (md.overrides || {}) : {};
+      let dc = 0, dn = 0;
+      defs.forEach(e => { const ef = getEffectiveDefault(e, ov); if (!ef) return; if (ef.category === '貯金') dc += ef.amount; if (ef.category === 'NISA') dn += ef.amount; });
+      const ic = md ? (md.expenses || []).filter(e => e.category === '貯金').reduce((s,e) => s+e.amount, 0) : 0;
+      const in_ = md ? (md.expenses || []).filter(e => e.category === 'NISA').reduce((s,e) => s+e.amount, 0) : 0;
+      const uc = md ? (md.expenses || []).filter(e => e.category === '貯金使用').reduce((s,e) => s+e.amount, 0) : 0;
+      const un = md ? (md.expenses || []).filter(e => e.category === 'NISA使用').reduce((s,e) => s+e.amount, 0) : 0;
+      cumChokin += dc + ic - uc;
+      cumNisa   += dn + in_ - un;
+      if (k === displayKey) break outer;
+    }
+  }
+  document.getElementById('home-savings-amount').textContent = (cumChokin + cumNisa).toLocaleString();
 }
 
 // ===== FILTER SHEET =====
