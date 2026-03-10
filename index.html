@@ -1989,6 +1989,32 @@ function formatIncomeInput(el) {
   }, { passive: true });
 })();
 
+// ===== ナビバースワイプ =====
+(function() {
+  const TABS = ['top', 'settings', 'savings', 'vacation', 'backup'];
+  const THRESHOLD = 50;
+  let navStartX = 0;
+  const nav = document.querySelector('.bottom-nav');
+
+  nav.addEventListener('touchstart', (e) => {
+    navStartX = e.touches[0].clientX;
+  }, { passive: true });
+
+  nav.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - navStartX;
+    if (Math.abs(dx) < THRESHOLD) return;
+    let current = 0;
+    document.querySelectorAll('.nav-btn').forEach((btn, i) => {
+      if (btn.classList.contains('active')) current = i;
+    });
+    const next = dx < 0 ? current + 1 : current - 1;
+    if (next < 0 || next >= TABS.length) return;
+    const name = TABS[next];
+    if (name === 'backup') showBackupSheet();
+    else showScreen(name);
+  }, { passive: true });
+})();
+
 // ===== MONTH JUMP PICKER =====
 let mjumpState = { year: 0, mode: 'year' };
 
