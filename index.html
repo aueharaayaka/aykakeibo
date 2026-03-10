@@ -136,8 +136,10 @@
   /* ===== ENTRY FORM ===== */
   .entry-form {
     display: flex; align-items: center; gap: 4px; margin-bottom: 12px;
-    width: 100%; box-sizing: border-box;
+    width: 100%; box-sizing: border-box; flex-wrap: wrap;
   }
+  .entry-form .amount-group { flex: 1; }
+  .entry-form .amount-input { flex: 1; min-width: 0; }
   .select-wrap {
     position: relative; flex: 0 0 76px; min-width: 0;
   }
@@ -791,9 +793,9 @@
         <input class="edit-text" type="text" id="edit-item" placeholder="品目">
       </div>
       <div class="edit-form-row">
-        <div class="amount-group" style="flex:1;">
-          <button class="sign-btn" type="button" onclick="toggleSign('edit-amount')">±</button>
-          <input class="edit-amount" type="text" id="edit-amount" placeholder="金額" inputmode="tel">
+        <div style="flex:1;display:flex;border:2px solid var(--pink-border);border-radius:8px;background:var(--white);overflow:hidden;">
+          <button type="button" onclick="toggleSign('edit-amount')" style="padding:10px 12px;background:none;border:none;border-right:2px solid var(--pink-border);font-family:'LINESeedJP',sans-serif;font-size:15px;font-weight:700;color:var(--text-dark);cursor:pointer;flex-shrink:0;">±</button>
+          <input class="edit-amount" type="text" id="edit-amount" placeholder="金額" inputmode="tel" style="border:none;border-radius:0;flex:1;">
         </div>
       </div>
       <button class="edit-save-btn" onclick="saveEdit()">保存</button>
