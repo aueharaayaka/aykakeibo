@@ -161,7 +161,7 @@
   }
   .text-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
   .amount-input {
-    flex: 0 0 120px; min-width: 0; padding: 9px 8px; border-radius: var(--radius-sm);
+    flex: 0 0 90px; min-width: 0; padding: 9px 8px; border-radius: var(--radius-sm);
     border: 1.5px solid var(--pink-border); background: var(--white);
     font-family: 'LINESeedJP', sans-serif; font-size: 16px; color: var(--text-body);
     text-align: left; box-shadow: var(--shadow);
@@ -638,9 +638,8 @@
     </div>
     <div class="field-group" style="flex:1;min-width:0;">
       <div class="field-label">NISAプラスマイナス</div>
-      <div class="field-row" style="gap:0;">
-        <button class="sign-btn" type="button" onclick="toggleSign('nisa-gain-input')" style="border-radius:var(--radius) 0 0 var(--radius);box-shadow:none;">±</button>
-        <div class="field-input-wrap" style="flex:1;border-radius:0 var(--radius) var(--radius) 0;border-left:1.5px solid var(--pink-border);"><input class="field-input" type="text" id="nisa-gain-input" placeholder="0" inputmode="tel" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
+      <div class="field-row">
+        <div class="field-input-wrap" style="flex:1;"><button type="button" onclick="toggleSign('nisa-gain-input')" style="padding:9px 10px;background:none;border:none;border-right:1.5px solid var(--pink-border);font-family:'LINESeedJP',sans-serif;font-size:15px;font-weight:700;color:var(--text-dark);cursor:pointer;align-self:stretch;flex-shrink:0;">±</button><input class="field-input" type="text" id="nisa-gain-input" placeholder="0" inputmode="tel" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
       </div>
     </div>
   </div>
