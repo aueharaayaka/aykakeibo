@@ -174,6 +174,7 @@
     box-shadow: 0 3px 10px rgba(240,81,138,0.35);
   }
   .register-btn:active { transform: scale(0.95); }
+  .sign-btn { flex: 0 0 auto; padding: 9px 10px; border-radius: var(--radius-sm); background: var(--white); color: var(--text-dark); font-family: 'LINESeedJP', sans-serif; font-size: 15px; font-weight: 700; border: 1.5px solid var(--pink-border); cursor: pointer; box-shadow: var(--shadow); }
 
   /* ===== TABLE ===== */
   .expense-table {
@@ -479,6 +480,7 @@
       <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
     </div>
     <input class="text-input" type="text" id="entry-item" placeholder="品目" onkeydown="handleEntryEnter(event)">
+    <button class="sign-btn" type="button" onclick="toggleSign('entry-amount')">±</button>
     <input class="amount-input" type="text" id="entry-amount" placeholder="金額" inputmode="tel" onkeydown="handleEntryEnter(event)" oninput="formatNumberInput(this)">
     <button class="register-btn" onclick="addExpense()">登録</button>
   </div>
@@ -543,6 +545,7 @@
         <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </div>
       <input class="text-input" type="text" id="default-item" placeholder="品目" onkeydown="handleDefaultEnter(event)">
+      <button class="sign-btn" type="button" onclick="toggleSign('default-amount')">±</button>
       <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="tel" onkeydown="handleDefaultEnter(event)" oninput="formatNumberInput(this)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
@@ -627,8 +630,9 @@
     </div>
     <div class="field-group" style="flex:1;min-width:0;">
       <div class="field-label">NISAプラスマイナス</div>
-      <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input" type="text" id="nisa-gain-input" placeholder="0" inputmode="tel" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
+      <div class="field-row" style="gap:6px;">
+        <button class="sign-btn" type="button" onclick="toggleSign('nisa-gain-input')">±</button>
+        <div class="field-input-wrap" style="flex:1;"><input class="field-input" type="text" id="nisa-gain-input" placeholder="0" inputmode="tel" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
       </div>
     </div>
   </div>
@@ -780,6 +784,7 @@
         <input class="edit-text" type="text" id="edit-item" placeholder="品目">
       </div>
       <div class="edit-form-row">
+        <button class="sign-btn" type="button" onclick="toggleSign('edit-amount')">±</button>
         <input class="edit-amount" type="text" id="edit-amount" placeholder="金額" inputmode="tel">
       </div>
       <button class="edit-save-btn" onclick="saveEdit()">保存</button>
@@ -1920,10 +1925,19 @@ function formatSettingInput(el) {
   el.value = raw;
 }
 
+function toggleSign(id) {
+  const el = document.getElementById(id);
+  const raw = (el.value || '').replace(/,/g, '');
+  const n = parseFloat(raw);
+  if (!raw || isNaN(n)) return;
+  el.value = (-n).toLocaleString();
+  el.dispatchEvent(new Event('input'));
+}
+
 function formatGoalInput(el) {
   if (el._imeActive) return;
   const raw = (el.value || '').replace(/,/g, '').replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
-  if (/^\d+$/.test(raw)) el.value = parseInt(raw, 10).toLocaleString();
+  if (/^-?\d+$/.test(raw)) el.value = parseInt(raw, 10).toLocaleString();
 }
 
 function formatNumberInput(el) {
