@@ -439,7 +439,7 @@
   <div class="field-group">
     <div class="field-label">今月の収入</div>
     <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input" type="text" id="income-input" placeholder="0" oninput="formatIncomeInput(this);recalc()" inputmode="numeric"><span class="field-unit-inside">円</span></div>
+      <div class="field-input-wrap"><input class="field-input" type="text" id="income-input" placeholder="0" oninput="formatIncomeInput(this);recalc()" inputmode="tel"><span class="field-unit-inside">円</span></div>
     </div>
   </div>
 
@@ -479,7 +479,7 @@
       <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
     </div>
     <input class="text-input" type="text" id="entry-item" placeholder="品目" onkeydown="handleEntryEnter(event)">
-    <input class="amount-input" type="text" id="entry-amount" placeholder="金額" inputmode="text" onkeydown="handleEntryEnter(event)" oninput="formatNumberInput(this)">
+    <input class="amount-input" type="text" id="entry-amount" placeholder="金額" inputmode="tel" onkeydown="handleEntryEnter(event)" oninput="formatNumberInput(this)">
     <button class="register-btn" onclick="addExpense()">登録</button>
   </div>
 
@@ -543,7 +543,7 @@
         <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </div>
       <input class="text-input" type="text" id="default-item" placeholder="品目" onkeydown="handleDefaultEnter(event)">
-      <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="text" onkeydown="handleDefaultEnter(event)" oninput="formatNumberInput(this)">
+      <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="tel" onkeydown="handleDefaultEnter(event)" oninput="formatNumberInput(this)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
     <div class="expense-table scrollable setting-list" id="default-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;">
@@ -560,7 +560,7 @@
     <div class="settings-section" style="flex:1;min-width:0;">
       <div class="field-label">1日の食費</div>
       <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input" type="text" id="daily-food-input" placeholder="0" inputmode="numeric" oninput="formatSettingInput(this);saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
+        <div class="field-input-wrap"><input class="field-input" type="text" id="daily-food-input" placeholder="0" inputmode="tel" oninput="formatSettingInput(this);saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
       </div>
     </div>
   </div>
@@ -622,13 +622,13 @@
     <div class="field-group" style="flex:1;min-width:0;">
       <div class="field-label">NISA初期残高</div>
       <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input" type="text" id="nisa-initial-input" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
+        <div class="field-input-wrap"><input class="field-input" type="text" id="nisa-initial-input" placeholder="0" inputmode="tel" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
       </div>
     </div>
     <div class="field-group" style="flex:1;min-width:0;">
       <div class="field-label">NISAプラスマイナス</div>
       <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input" type="text" id="nisa-gain-input" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
+        <div class="field-input-wrap"><input class="field-input" type="text" id="nisa-gain-input" placeholder="0" inputmode="tel" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
       </div>
     </div>
   </div>
@@ -642,7 +642,7 @@
     <div class="field-group" style="flex:1;min-width:0;">
       <div class="field-label">目標金額</div>
       <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input" type="text" id="savings-goal" placeholder="0" inputmode="numeric" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
+        <div class="field-input-wrap"><input class="field-input" type="text" id="savings-goal" placeholder="0" inputmode="tel" oninput="formatGoalInput(this);saveSettings();renderSavings()"><span class="field-unit-inside">円</span></div>
       </div>
     </div>
   </div>
@@ -780,7 +780,7 @@
         <input class="edit-text" type="text" id="edit-item" placeholder="品目">
       </div>
       <div class="edit-form-row">
-        <input class="edit-amount" type="text" id="edit-amount" placeholder="金額" inputmode="text">
+        <input class="edit-amount" type="text" id="edit-amount" placeholder="金額" inputmode="tel">
       </div>
       <button class="edit-save-btn" onclick="saveEdit()">保存</button>
     </div>
