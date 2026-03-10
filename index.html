@@ -1265,8 +1265,7 @@ function renderTotalBar() {
   document.getElementById('weekday-count').textContent = weekdays;
 
   // 貯金累計（表示月まで）
-  const nisaInitial = state.settings.nisaInitial || 0;
-  let cumChokin = 0, cumNisa = nisaInitial;
+  let cumChokin = 0;
   const defs = state.settings.defaults || [];
   const displayKey = monthKey(state.currentYear, state.currentMonth);
   outer: for (let y = 2026; y <= state.currentYear; y++) {
@@ -1275,18 +1274,15 @@ function renderTotalBar() {
       const k = monthKey(y, m);
       const md = state.data[k];
       const ov = md ? (md.overrides || {}) : {};
-      let dc = 0, dn = 0;
-      defs.forEach(e => { const ef = getEffectiveDefault(e, ov); if (!ef) return; if (ef.category === '貯金') dc += ef.amount; if (ef.category === 'NISA') dn += ef.amount; });
+      let dc = 0;
+      defs.forEach(e => { const ef = getEffectiveDefault(e, ov); if (ef && ef.category === '貯金') dc += ef.amount; });
       const ic = md ? (md.expenses || []).filter(e => e.category === '貯金').reduce((s,e) => s+e.amount, 0) : 0;
-      const in_ = md ? (md.expenses || []).filter(e => e.category === 'NISA').reduce((s,e) => s+e.amount, 0) : 0;
       const uc = md ? (md.expenses || []).filter(e => e.category === '貯金使用').reduce((s,e) => s+e.amount, 0) : 0;
-      const un = md ? (md.expenses || []).filter(e => e.category === 'NISA使用').reduce((s,e) => s+e.amount, 0) : 0;
       cumChokin += dc + ic - uc;
-      cumNisa   += dn + in_ - un;
       if (k === displayKey) break outer;
     }
   }
-  document.getElementById('home-savings-amount').textContent = (cumChokin + cumNisa).toLocaleString();
+  document.getElementById('home-savings-amount').textContent = cumChokin.toLocaleString();
 }
 
 // ===== FILTER SHEET =====
