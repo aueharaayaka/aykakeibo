@@ -174,12 +174,7 @@
     box-shadow: 0 3px 10px rgba(240,81,138,0.35);
   }
   .register-btn:active { transform: scale(0.95); }
-  .sign-btn { flex: 0 0 auto; padding: 9px 6px; background: var(--white); color: var(--text-dark); font-family: 'LINESeedJP', sans-serif; font-size: 15px; font-weight: 700; border: 1.5px solid var(--pink-border); cursor: pointer; border-radius: var(--radius-sm) 0 0 var(--radius-sm); border-right: none; }
-  .amount-group { display: flex; align-items: stretch; flex: 0 0 auto; }
-  .entry-form .amount-group { width: 120px; overflow: hidden; }
-  .amount-group .amount-input { flex: 1; min-width: 0; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; box-shadow: none; }
-  .amount-group .edit-amount { border-radius: 0 8px 8px 0; flex: 1; }
-  .amount-group .sign-btn { box-shadow: none; }
+  .sign-btn { flex: 0 0 auto; padding: 9px 8px; background: var(--white); color: var(--text-dark); font-family: 'LINESeedJP', sans-serif; font-size: 15px; font-weight: 700; border: 1.5px solid var(--pink-border); cursor: pointer; border-radius: var(--radius-sm); box-shadow: var(--shadow); }
 
   /* ===== TABLE ===== */
   .expense-table {
@@ -485,10 +480,8 @@
       <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
     </div>
     <input class="text-input" type="text" id="entry-item" placeholder="品目" onkeydown="handleEntryEnter(event)">
-    <div class="amount-group">
-      <button class="sign-btn" type="button" onclick="toggleSign('entry-amount')">±</button>
-      <input class="amount-input" type="text" id="entry-amount" placeholder="金額" inputmode="tel" onkeydown="handleEntryEnter(event)" oninput="formatNumberInput(this)">
-    </div>
+    <button class="sign-btn" type="button" onclick="toggleSign('entry-amount')">±</button>
+    <input class="amount-input" type="text" id="entry-amount" placeholder="金額" inputmode="tel" onkeydown="handleEntryEnter(event)" oninput="formatNumberInput(this)">
     <button class="register-btn" onclick="addExpense()">登録</button>
   </div>
 
@@ -552,10 +545,8 @@
         <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
       </div>
       <input class="text-input" type="text" id="default-item" placeholder="品目" onkeydown="handleDefaultEnter(event)">
-      <div class="amount-group">
-        <button class="sign-btn" type="button" onclick="toggleSign('default-amount')">±</button>
-        <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="tel" onkeydown="handleDefaultEnter(event)" oninput="formatNumberInput(this)">
-      </div>
+      <button class="sign-btn" type="button" onclick="toggleSign('default-amount')">±</button>
+      <input class="amount-input" type="text" id="default-amount" placeholder="金額" inputmode="tel" onkeydown="handleDefaultEnter(event)" oninput="formatNumberInput(this)">
       <button class="register-btn" onclick="addDefaultEntry()">登録</button>
     </div>
     <div class="expense-table scrollable setting-list" id="default-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;">
