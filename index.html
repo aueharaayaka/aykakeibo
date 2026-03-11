@@ -925,9 +925,10 @@ function loadData() {
 // ===== INIT =====
 loadCachedHolidays(); // キャッシュ済み祝日を同期的に反映
 loadData();
-// 既存データにdefIdがない場合は補完
+// 既存データにdefIdがない場合は補完、sinceがない場合は2026-03を設定
 (state.settings.defaults || []).forEach((e, i) => {
   if (!e.defId) e.defId = 'def_legacy_' + i;
+  if (!e.since) e.since = '2026-03';
 });
 const today = new Date();
 // 常に今月を開く
@@ -963,7 +964,9 @@ function getEffectiveDefault(defEntry, overrides) {
 function getAllExpenses() {
   const d = getCurrentData();
   const overrides = d.overrides || {};
+  const currentKey = getCurrentKey();
   const effectiveDefaults = (state.settings.defaults || [])
+    .filter(e => (e.since || '2026-03') <= currentKey)
     .map(e => getEffectiveDefault(e, overrides))
     .filter(Boolean)
     .map(e => ({ ...e, isDefault: true }));
@@ -1086,7 +1089,8 @@ function renderExpenseList() {
   const defaults = state.settings.defaults || [];
   const list = document.getElementById('expense-list');
 
-  const effectiveDefaults = defaults.map(e => getEffectiveDefault(e, overrides)).filter(Boolean);
+  const currentKey = getCurrentKey();
+  const effectiveDefaults = defaults.filter(e => (e.since || '2026-03') <= currentKey).map(e => getEffectiveDefault(e, overrides)).filter(Boolean);
 
   if (effectiveDefaults.length === 0 && expenses.length === 0) {
     list.innerHTML = '<div class="empty-state">支出がありません</div>';
@@ -1289,7 +1293,7 @@ function renderTotalBar() {
       const md = state.data[k];
       const ov = md ? (md.overrides || {}) : {};
       let dc = 0;
-      defs.forEach(e => { const ef = getEffectiveDefault(e, ov); if (ef && ef.category === '貯金') dc += ef.amount; });
+      defs.filter(e => (e.since || '2026-03') <= k).forEach(e => { const ef = getEffectiveDefault(e, ov); if (ef && ef.category === '貯金') dc += ef.amount; });
       const ic = md ? (md.expenses || []).filter(e => e.category === '貯金').reduce((s,e) => s+e.amount, 0) : 0;
       const uc = md ? (md.expenses || []).filter(e => e.category === '貯金使用').reduce((s,e) => s+e.amount, 0) : 0;
       cumChokin += dc + ic - uc;
@@ -1549,7 +1553,8 @@ function addDefaultEntry() {
   if (isNaN(amount)) { showToast('金額を入力してください'); return; }
 
   const defId = 'def_' + Date.now();
-  state.settings.defaults.push({ defId, category: cat, item: item || '', amount });
+  const since = getCurrentKey();
+  state.settings.defaults.push({ defId, since, category: cat, item: item || '', amount });
   saveData();
 
   document.getElementById('default-category').value = '';
@@ -1566,7 +1571,7 @@ function addDefaultEntry() {
 function duplicateDefaultEntry(index) {
   const e = state.settings.defaults[index];
   const defId = 'def_' + Date.now();
-  state.settings.defaults.push({ defId, category: e.category, item: e.item, amount: e.amount });
+  state.settings.defaults.push({ defId, since: getCurrentKey(), category: e.category, item: e.item, amount: e.amount });
   saveData();
   renderDefaultList();
   renderExpenseList();
@@ -1644,7 +1649,7 @@ function renderSavings() {
       const overrides = d ? (d.overrides || {}) : {};
 
       let defC = 0, defN = 0, defJ = 0;
-      defaults.forEach(e => {
+      defaults.filter(e => (e.since || '2026-03') <= k).forEach(e => {
         const eff = getEffectiveDefault(e, overrides);
         if (!eff) return;
         if (eff.category === '貯金') defC += eff.amount;
