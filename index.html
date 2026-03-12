@@ -1287,7 +1287,7 @@ function renderTotalBar() {
   const defs = state.settings.defaults || [];
   const displayKey = monthKey(state.currentYear, state.currentMonth);
   outer: for (let y = 2026; y <= state.currentYear; y++) {
-    const startM = (y === 2026) ? 3 : 1;
+    const startM = (y === 2026) ? 2 : 1; // テスト用（確認後3に戻す）
     for (let m = startM; m <= 12; m++) {
       const k = monthKey(y, m);
       const md = state.data[k];
@@ -1638,7 +1638,7 @@ function renderSavings() {
 
   const startYear = 2026;
   for (let y = startYear; y <= endY; y++) {
-    const startM = (y === 2026) ? 3 : 1;
+    const startM = (y === 2026) ? 2 : 1; // テスト用（確認後3に戻す）
     const yearDone = (y < todayYear);
     const yearChokinMonths = [], yearNisaMonths = [], yearJo1Months = [];
     let hasCurrentMonth = false;
