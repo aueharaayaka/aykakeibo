@@ -979,7 +979,7 @@ function changeMonth(delta) {
   let y = state.currentYear;
   if (m > 12) { m = 1; y++; }
   if (m < 1)  { m = 12; y--; }
-  if (y < 2026 || (y === 2026 && m < 2)) return; // テスト用：2026-02まで許可（確認後3に戻す）
+  if (y < 2026 || (y === 2026 && m < 3)) return;
   state.currentYear = y;
   state.currentMonth = m;
   saveData();
@@ -1287,7 +1287,7 @@ function renderTotalBar() {
   const defs = state.settings.defaults || [];
   const displayKey = monthKey(state.currentYear, state.currentMonth);
   outer: for (let y = 2026; y <= state.currentYear; y++) {
-    const startM = (y === 2026) ? 2 : 1; // テスト用（確認後3に戻す）
+    const startM = (y === 2026) ? 3 : 1;
     for (let m = startM; m <= 12; m++) {
       const k = monthKey(y, m);
       const md = state.data[k];
@@ -1638,7 +1638,7 @@ function renderSavings() {
 
   const startYear = 2026;
   for (let y = startYear; y <= endY; y++) {
-    const startM = (y === 2026) ? 2 : 1; // テスト用（確認後3に戻す）
+    const startM = (y === 2026) ? 3 : 1;
     const yearDone = (y < todayYear);
     const yearChokinMonths = [], yearNisaMonths = [], yearJo1Months = [];
     let hasCurrentMonth = false;
