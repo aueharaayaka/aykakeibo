@@ -979,7 +979,7 @@ function changeMonth(delta) {
   let y = state.currentYear;
   if (m > 12) { m = 1; y++; }
   if (m < 1)  { m = 12; y--; }
-  if (y < 2026 || (y === 2026 && m < 3)) return;
+  if (y < 2026 || (y === 2026 && m < 2)) return; // テスト用：2026-02まで許可（確認後3に戻す）
   state.currentYear = y;
   state.currentMonth = m;
   saveData();
