@@ -491,8 +491,12 @@
 
   <div style="display:flex;gap:8px;margin-bottom:8px;">
     <div class="total-bar" style="flex:1;padding:6px 12px;">
-      <span class="total-label" style="font-size:12px;">食費</span>
-      <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="food-total">0</span>
+      <span class="total-label" style="font-size:12px;" id="food-label">食費</span>
+      <input type="text" id="food-total" inputmode="tel" value="0"
+        style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);border:none;background:transparent;outline:none;padding:0;min-width:0;"
+        oninput="formatNumberInput(this)"
+        onblur="saveFoodBudgetOverride()"
+        onkeydown="if(event.key==='Enter')this.blur()">
       <span class="total-unit" style="font-size:12px;">円</span>
     </div>
     <div class="total-bar" style="padding:6px 12px;">
@@ -1029,7 +1033,8 @@ function recalc() {
   const dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
   // 食費マイナス分を食費予算から差し引く（所持金・残高にも反映）
   const foodDiscount = allExpenses.filter(e => e.category === '食費' && e.amount < 0).reduce((s, e) => s + e.amount, 0);
-  const effectiveFoodBudget = Math.max(0, dailyFood * weekdays + foodDiscount);
+  const computedFoodBudget = Math.max(0, dailyFood * weekdays + foodDiscount);
+  const effectiveFoodBudget = (d.foodBudgetOverride != null) ? d.foodBudgetOverride : computedFoodBudget;
   const nonFoodExpenses = cashExpenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
   const balance = incomeVal - (nonFoodExpenses + effectiveFoodBudget);
 
@@ -1278,8 +1283,11 @@ function renderTotalBar() {
   const foodDiscount = allExpenses
     .filter(e => e.category === '食費' && e.amount < 0)
     .reduce((s, e) => s + e.amount, 0);
-  const foodTotal = Math.max(0, dailyFoodRate * weekdays + foodDiscount);
-  document.getElementById('food-total').textContent = foodTotal.toLocaleString();
+  const computedFood = Math.max(0, dailyFoodRate * weekdays + foodDiscount);
+  const d_tb = getCurrentData();
+  const foodTotal = (d_tb.foodBudgetOverride != null) ? d_tb.foodBudgetOverride : computedFood;
+  document.getElementById('food-total').value = foodTotal.toLocaleString();
+  document.getElementById('food-label').textContent = d_tb.foodBudgetOverride != null ? '食費*' : '食費';
   document.getElementById('weekday-count').textContent = weekdays;
 
   // 貯金累計（表示月まで）
@@ -1323,6 +1331,24 @@ function selectFilter(cat) {
   state.totalFilter = cat;
   document.getElementById('filter-overlay').classList.remove('show');
   renderTotalBar();
+}
+
+function saveFoodBudgetOverride() {
+  const el = document.getElementById('food-total');
+  const raw = (el.value || '').replace(/,/g, '');
+  const d = getCurrentData();
+  const allExpenses = getAllExpenses();
+  const foodDiscount = allExpenses.filter(e => e.category === '食費' && e.amount < 0).reduce((s, e) => s + e.amount, 0);
+  const weekdays = countWeekdays(state.currentYear, state.currentMonth);
+  const computed = Math.max(0, (state.settings.dailyFood || 0) * weekdays + foodDiscount);
+  const val = parseFloat(raw);
+  if (!raw || isNaN(val)) {
+    d.foodBudgetOverride = null;
+  } else {
+    d.foodBudgetOverride = (val === computed) ? null : val;
+  }
+  saveData();
+  recalc();
 }
 
 // ===== SETTINGS =====
