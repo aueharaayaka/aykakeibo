@@ -490,7 +490,7 @@
   </div>
 
   <div style="display:flex;gap:8px;margin-bottom:8px;">
-    <div class="total-bar" style="flex:1;padding:6px 12px;">
+    <div class="total-bar" style="flex:1;min-width:0;padding:6px 12px;">
       <span class="total-label" style="font-size:12px;" id="food-label">食費</span>
       <input type="text" id="food-total" inputmode="tel" value="0"
         style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);border:none;background:transparent;outline:none;padding:0;min-width:0;font-family:'LINESeedJP',sans-serif;"
@@ -499,7 +499,7 @@
         onkeydown="if(event.key==='Enter')this.blur()">
       <span class="total-unit" style="font-size:12px;">円</span>
     </div>
-    <div class="total-bar" style="padding:6px 12px;">
+    <div class="total-bar" style="flex-shrink:0;padding:6px 12px;">
       <span class="total-label" style="font-size:12px;">平日</span>
       <span style="margin-left:6px;font-size:15px;font-weight:700;color:var(--pink-main);" id="weekday-count">0</span>
       <span class="total-unit" style="font-size:12px;">日</span>
