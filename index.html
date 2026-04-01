@@ -1892,13 +1892,19 @@ function renderSavings() {
       const indivN = d ? (d.expenses || []).filter(e => e.category === 'NISA').reduce((s, e) => s + e.amount, 0) : 0;
       const indivJ = d ? (d.expenses || []).filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0) : 0;
 
-      const cAmt = defC + indivC;
-      const nAmt = defN + indivN;
-      const jAmt = defJ + indivJ;
+      const planned = d ? (d.plannedExpenses || []) : [];
+      const planC = planned.filter(e => e.category === '貯金').reduce((s, e) => s + e.amount, 0);
+      const planJ = planned.filter(e => e.category === 'JO1').reduce((s, e) => s + e.amount, 0);
 
-      const chokinUsedM = d ? (d.expenses || []).filter(e => e.category === '貯金使用').reduce((s, e) => s + e.amount, 0) : 0;
+      const cAmt = defC + indivC + planC;
+      const nAmt = defN + indivN;
+      const jAmt = defJ + indivJ + planJ;
+
+      const chokinUsedM = (d ? (d.expenses || []).filter(e => e.category === '貯金使用').reduce((s, e) => s + e.amount, 0) : 0)
+                        + planned.filter(e => e.category === '貯金使用').reduce((s, e) => s + e.amount, 0);
       const nisaUsedM   = d ? (d.expenses || []).filter(e => e.category === 'NISA使用').reduce((s, e) => s + e.amount, 0) : 0;
-      const jo1UsedM    = d ? (d.expenses || []).filter(e => e.category === 'JO1使用').reduce((s, e) => s + e.amount, 0) : 0;
+      const jo1UsedM    = (d ? (d.expenses || []).filter(e => e.category === 'JO1使用').reduce((s, e) => s + e.amount, 0) : 0)
+                        + planned.filter(e => e.category === 'JO1使用').reduce((s, e) => s + e.amount, 0);
 
       plannedChokin += cAmt - chokinUsedM;
       plannedNisa   += nAmt - nisaUsedM;
