@@ -494,6 +494,11 @@
     <button class="register-btn" onclick="addExpense()">登録</button>
   </div>
 
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+    <span style="font-size:12px;font-weight:700;color:var(--text-dark);">予定支出</span>
+    <button onclick="openPlannedSheet()" style="padding:4px 12px;border-radius:20px;border:none;background:var(--pink-main);color:white;font-family:'LINESeedJP',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">＋ 追加</button>
+  </div>
+
   <div class="expense-table scrollable" id="expense-list">
     <div class="empty-state">支出がありません</div>
   </div>
@@ -722,6 +727,40 @@
     <span>同期</span>
   </button>
 </nav>
+
+<!-- PLANNED EXPENSE SHEET -->
+<div class="dropdown-overlay" id="planned-overlay" onclick="closePlannedSheet(event)">
+  <div class="dropdown-sheet">
+    <h3>予定支出を追加</h3>
+    <div class="edit-form">
+      <div class="edit-form-row">
+        <select class="edit-select" id="planned-category">
+          <option value="">用途</option>
+          <option value="食費">食費</option>
+          <option value="外食">外食</option>
+          <option value="交通費">交通費</option>
+          <option value="貯金">貯金</option>
+          <option value="NISA">NISA</option>
+          <option value="JO1">JO1</option>
+          <option value="その他">その他</option>
+          <option value="貯金使用">貯金使用</option>
+          <option value="NISA使用">NISA使用</option>
+          <option value="JO1使用">JO1使用</option>
+        </select>
+      </div>
+      <div class="edit-form-row">
+        <input class="edit-text" type="text" id="planned-item" placeholder="品目">
+      </div>
+      <div class="edit-form-row">
+        <div style="flex:1;display:flex;border:2px solid var(--pink-border);border-radius:8px;background:var(--white);overflow:hidden;">
+          <button type="button" onclick="toggleSign('planned-amount')" style="padding:10px 12px;background:none;border:none;border-right:2px solid var(--pink-border);font-family:'LINESeedJP',sans-serif;font-size:15px;font-weight:700;color:var(--text-dark);cursor:pointer;flex-shrink:0;">±</button>
+          <input class="edit-amount" type="text" id="planned-amount" placeholder="金額" inputmode="tel" style="border:none;border-radius:0;flex:1;" oninput="formatNumberInput(this)" onkeydown="if(event.key==='Enter')addPlannedExpense()">
+        </div>
+      </div>
+      <button class="edit-save-btn" onclick="addPlannedExpense()">登録</button>
+    </div>
+  </div>
+</div>
 
 <!-- FILTER SHEET -->
 <div class="dropdown-overlay" id="filter-overlay" onclick="closeFilterSheet(event)">
@@ -1050,7 +1089,7 @@ function recalc() {
   document.getElementById('holdings-display').value = holdings.toLocaleString();
   document.getElementById('balance-display').value = balance.toLocaleString();
 
-  // 口座残高 = accountBalanceInit - チェック済みデフォルト合計 - 通常支出合計
+  // 口座残高 = accountBalanceInit - チェック済みデフォルト合計 - チェック済み予定支出合計 - 通常支出合計
   const checkedDefaults = d.checkedDefaults || {};
   const currentKey = getCurrentKey();
   const checkedTotal = (state.settings.defaults || [])
@@ -1059,11 +1098,15 @@ function recalc() {
       const eff = getEffectiveDefault(e, d.overrides || {});
       return s + (eff ? eff.amount : 0);
     }, 0);
+  const checkedPlanned = d.checkedPlanned || {};
+  const checkedPlannedTotal = (d.plannedExpenses || [])
+    .filter(e => checkedPlanned[e.id])
+    .reduce((s, e) => s + e.amount, 0);
   const nonDefaultExpenses = (d.expenses || [])
     .filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用')
     .reduce((s, e) => s + e.amount, 0);
   const accountBalanceInit = (d.accountBalanceInit != null) ? d.accountBalanceInit : incomeVal;
-  const accountBalance = accountBalanceInit - checkedTotal - nonDefaultExpenses;
+  const accountBalance = accountBalanceInit - checkedTotal - checkedPlannedTotal - nonDefaultExpenses;
   const abEl = document.getElementById('account-balance-display');
   if (document.activeElement !== abEl) {
     abEl.value = accountBalance.toLocaleString();
@@ -1126,7 +1169,8 @@ function renderExpenseList() {
   const currentKey = getCurrentKey();
   const effectiveDefaults = defaults.filter(e => (e.since || '2026-03') <= currentKey).map(e => getEffectiveDefault(e, overrides)).filter(Boolean);
 
-  if (effectiveDefaults.length === 0 && expenses.length === 0) {
+  const plannedCheck = d.plannedExpenses || [];
+  if (effectiveDefaults.length === 0 && expenses.length === 0 && plannedCheck.length === 0) {
     list.innerHTML = '<div class="empty-state">支出がありません</div>';
     return;
   }
@@ -1148,6 +1192,22 @@ function renderExpenseList() {
   `;
   }).join('');
 
+  const plannedExpenses = d.plannedExpenses || [];
+  const checkedPlanned = d.checkedPlanned || {};
+  const plannedRows = plannedExpenses.map(e => {
+    const isChecked = !!checkedPlanned[e.id];
+    return `
+    <div class="expense-row" style="background:#f0f4ff;${isChecked ? 'opacity:0.55;' : ''}">
+      <button class="row-check${isChecked ? ' row-check-on' : ''}" onclick="togglePlannedCheck('${e.id}')" title="${isChecked ? '支払済み' : '未払い'}">✓</button>
+      <span class="row-date" style="font-size:10px;color:#ccc;min-width:28px;">予定</span>
+      <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
+      <span class="row-item">${e.item || ''}</span>
+      <span class="row-amount">${e.amount.toLocaleString()}円</span>
+      <button class="row-del" onclick="deletePlannedExpense('${e.id}')">×</button>
+    </div>
+  `;
+  }).join('');
+
   const expenseRows = expenses.map((e, i) => `
     <div class="expense-row">
       <span class="row-date">${e.date}</span>
@@ -1160,8 +1220,7 @@ function renderExpenseList() {
     </div>
   `).join('');
 
-  list.innerHTML = defaultRows + expenseRows;
-  list.scrollTop = list.scrollHeight;
+  list.innerHTML = defaultRows + plannedRows + expenseRows;
 }
 
 // ===== ADD EXPENSE =====
@@ -1184,6 +1243,8 @@ function addExpense() {
   document.getElementById('entry-amount').value = '';
 
   renderExpenseList();
+  const listEl = document.getElementById('expense-list');
+  listEl.scrollTop = listEl.scrollHeight;
   recalc();
   renderSavings();
   showToast('登録しました！');
@@ -1396,6 +1457,57 @@ function toggleDefaultCheck(defId) {
   recalc();
 }
 
+// ===== 予定支出 =====
+function openPlannedSheet() {
+  document.getElementById('planned-category').value = '';
+  document.getElementById('planned-item').value = '';
+  document.getElementById('planned-amount').value = '';
+  document.getElementById('planned-overlay').classList.add('show');
+}
+
+function closePlannedSheet(e) {
+  if (e.target === document.getElementById('planned-overlay')) {
+    document.getElementById('planned-overlay').classList.remove('show');
+  }
+}
+
+function addPlannedExpense() {
+  const cat = document.getElementById('planned-category').value;
+  const item = document.getElementById('planned-item').value.trim();
+  const amount = parseFloat((document.getElementById('planned-amount').value || '').replace(/,/g, ''));
+  if (!cat) { showToast('用途を選択してください'); return; }
+  if (isNaN(amount)) { showToast('金額を入力してください'); return; }
+  const d = getCurrentData();
+  if (!d.plannedExpenses) d.plannedExpenses = [];
+  d.plannedExpenses.push({ id: String(Date.now()), category: cat, item: item || '', amount });
+  saveData();
+  document.getElementById('planned-overlay').classList.remove('show');
+  renderExpenseList();
+  recalc();
+  const list = document.getElementById('expense-list');
+  list.scrollTop = list.scrollHeight;
+  showToast('予定支出を登録しました！');
+}
+
+function deletePlannedExpense(id) {
+  const d = getCurrentData();
+  d.plannedExpenses = (d.plannedExpenses || []).filter(e => e.id !== id);
+  if (d.checkedPlanned) delete d.checkedPlanned[id];
+  saveData();
+  renderExpenseList();
+  recalc();
+}
+
+function togglePlannedCheck(id) {
+  const d = getCurrentData();
+  if (!d.checkedPlanned) d.checkedPlanned = {};
+  d.checkedPlanned[id] = !d.checkedPlanned[id];
+  if (!d.checkedPlanned[id]) delete d.checkedPlanned[id];
+  saveData();
+  renderExpenseList();
+  recalc();
+}
+
 function saveAccountBalance() {
   const el = document.getElementById('account-balance-display');
   const entered = parseFloat((el.value || '').replace(/,/g, ''));
@@ -1409,11 +1521,15 @@ function saveAccountBalance() {
       const eff = getEffectiveDefault(e, d.overrides || {});
       return s + (eff ? eff.amount : 0);
     }, 0);
+  const checkedPlanned = d.checkedPlanned || {};
+  const checkedPlannedTotal = (d.plannedExpenses || [])
+    .filter(e => checkedPlanned[e.id])
+    .reduce((s, e) => s + e.amount, 0);
   const nonDefaultExpenses = (d.expenses || [])
     .filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用')
     .reduce((s, e) => s + e.amount, 0);
   // 表示値から逆算してinitを保存
-  d.accountBalanceInit = entered + checkedTotal + nonDefaultExpenses;
+  d.accountBalanceInit = entered + checkedTotal + checkedPlannedTotal + nonDefaultExpenses;
   saveData();
   recalc();
 }
