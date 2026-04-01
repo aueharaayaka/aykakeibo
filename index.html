@@ -1202,6 +1202,7 @@ function renderExpenseList() {
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item || ''}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
+      <button class="row-edit" onclick="openEditPlanned('${e.id}')">✎</button>
       <button class="row-del" onclick="deletePlannedExpense('${e.id}')">×</button>
     </div>
   `;
@@ -1311,6 +1312,18 @@ function openEditExpense(index) {
   document.getElementById('edit-overlay').classList.add('show');
 }
 
+function openEditPlanned(id) {
+  const d = getCurrentData();
+  const e = (d.plannedExpenses || []).find(e => e.id === id);
+  if (!e) return;
+  editTarget = { type: 'plannedExpense', id };
+  document.getElementById('edit-sheet-title').textContent = '予定支出を編集';
+  document.getElementById('edit-category').value = e.category;
+  document.getElementById('edit-item').value = e.item;
+  document.getElementById('edit-amount').value = e.amount;
+  document.getElementById('edit-overlay').classList.add('show');
+}
+
 function openEditDefaultGlobal(index) {
   const e = state.settings.defaults[index];
   editTarget = { type: 'defaultGlobal', index };
@@ -1346,6 +1359,10 @@ function saveEdit() {
     e.category = cat;
     e.item = item || e.item;
     e.amount = amount;
+  } else if (editTarget.type === 'plannedExpense') {
+    const d = getCurrentData();
+    const e = (d.plannedExpenses || []).find(e => e.id === editTarget.id);
+    if (e) { e.category = cat; e.item = item || ''; e.amount = amount; }
   } else if (editTarget.type === 'defaultGlobal') {
     const e = state.settings.defaults[editTarget.index];
     e.category = cat;
@@ -1415,7 +1432,9 @@ function renderTotalBar() {
       defs.filter(e => (e.since || '2026-03') <= k).forEach(e => { const ef = getEffectiveDefault(e, ov); if (ef && ef.category === '貯金') dc += ef.amount; });
       const ic = md ? (md.expenses || []).filter(e => e.category === '貯金').reduce((s,e) => s+e.amount, 0) : 0;
       const uc = md ? (md.expenses || []).filter(e => e.category === '貯金使用').reduce((s,e) => s+e.amount, 0) : 0;
-      cumChokin += dc + ic - uc;
+      const pc = md ? (md.plannedExpenses || []).filter(e => e.category === '貯金').reduce((s,e) => s+e.amount, 0) : 0;
+      const pu = md ? (md.plannedExpenses || []).filter(e => e.category === '貯金使用').reduce((s,e) => s+e.amount, 0) : 0;
+      cumChokin += dc + ic + pc - uc - pu;
       if (k === displayKey) break outer;
     }
   }
