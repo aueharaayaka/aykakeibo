@@ -1312,6 +1312,16 @@ function openEditExpense(index) {
   document.getElementById('edit-overlay').classList.add('show');
 }
 
+function openEditDefaultGlobal(index) {
+  const e = state.settings.defaults[index];
+  editTarget = { type: 'defaultGlobal', index };
+  document.getElementById('edit-sheet-title').textContent = 'デフォルト支出を編集（全月）';
+  document.getElementById('edit-category').value = e.category;
+  document.getElementById('edit-item').value = e.item;
+  document.getElementById('edit-amount').value = e.amount;
+  document.getElementById('edit-overlay').classList.add('show');
+}
+
 function openEditDefault(defId) {
   const d = getCurrentData();
   const overrides = d.overrides || {};
@@ -1337,6 +1347,11 @@ function saveEdit() {
     e.category = cat;
     e.item = item || e.item;
     e.amount = amount;
+  } else if (editTarget.type === 'defaultGlobal') {
+    const e = state.settings.defaults[editTarget.index];
+    e.category = cat;
+    e.item = item || '';
+    e.amount = amount;
   } else {
     const d = getCurrentData();
     d.overrides[editTarget.defId] = { category: cat, item: item || '', amount, deleted: false };
@@ -1345,6 +1360,8 @@ function saveEdit() {
   saveData();
   document.getElementById('edit-overlay').classList.remove('show');
   editTarget = null;
+  renderDefaultList();
+  renderDefaultTotal();
   renderExpenseList();
   recalc();
   renderSavings();
@@ -1826,6 +1843,7 @@ function renderDefaultList() {
       <span class="row-item">${e.item || ''}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
       <button class="row-copy" onclick="duplicateDefaultEntry(${i})" title="複製">⊕</button>
+      <button class="row-edit" onclick="openEditDefaultGlobal(${i})">✎</button>
       <button class="row-del" onclick="deleteDefaultEntry(${i})">×</button>
     </div>
   `).join('');
