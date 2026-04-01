@@ -448,31 +448,33 @@
     </button>
   </div>
 
-  <div class="field-group">
-    <div class="field-label">今月の収入</div>
-    <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input" type="text" id="income-input" placeholder="0" oninput="formatIncomeInput(this);recalc()" inputmode="tel"><span class="field-unit-inside">円</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0;">
+    <div class="field-group" style="margin-bottom:0;">
+      <div class="field-label">今月の収入</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input" type="text" id="income-input" placeholder="0" oninput="formatIncomeInput(this);recalc()" inputmode="tel"><span class="field-unit-inside">円</span></div>
+      </div>
     </div>
-  </div>
 
-  <div class="field-group">
-    <div class="field-label">所持金</div>
-    <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input readonly" type="text" id="holdings-display" value="0" readonly><span class="field-unit-inside">円</span></div>
+    <div class="field-group" style="margin-bottom:0;">
+      <div class="field-label">口座残高</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input" type="text" id="account-balance-display" value="0" inputmode="tel" oninput="formatAccountBalanceInput(this)" onblur="saveAccountBalance()"><span class="field-unit-inside">円</span></div>
+      </div>
     </div>
-  </div>
 
-  <div class="field-group">
-    <div class="field-label">残高</div>
-    <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input readonly" type="text" id="balance-display" value="0" readonly><span class="field-unit-inside">円</span></div>
+    <div class="field-group" style="margin-bottom:0;">
+      <div class="field-label">所持金</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="holdings-display" value="0" readonly><span class="field-unit-inside">円</span></div>
+      </div>
     </div>
-  </div>
 
-  <div class="field-group">
-    <div class="field-label">口座残高</div>
-    <div class="field-row">
-      <div class="field-input-wrap"><input class="field-input" type="text" id="account-balance-display" value="0" inputmode="tel" oninput="formatAccountBalanceInput(this)" onblur="saveAccountBalance()"><span class="field-unit-inside">円</span></div>
+    <div class="field-group" style="margin-bottom:0;">
+      <div class="field-label">残高</div>
+      <div class="field-row">
+        <div class="field-input-wrap"><input class="field-input readonly" type="text" id="balance-display" value="0" readonly><span class="field-unit-inside">円</span></div>
+      </div>
     </div>
   </div>
 
