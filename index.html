@@ -1072,8 +1072,9 @@ function recalc() {
   saveData();
 
   const allExpenses = getAllExpenses();
+  const plannedExpenses = d.plannedExpenses || [];
   // 貯金使用・NISA使用・JO1使用は現金支出でないので所持金・残高から除外
-  const cashExpenses = allExpenses.filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用');
+  const cashExpenses = [...allExpenses, ...plannedExpenses].filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用');
   const totalExpenses = cashExpenses.reduce((s, e) => s + e.amount, 0);
   const holdings = incomeVal - totalExpenses;
 
