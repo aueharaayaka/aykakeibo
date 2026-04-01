@@ -1062,7 +1062,7 @@ function recalc() {
   const nonDefaultExpenses = (d.expenses || [])
     .filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用')
     .reduce((s, e) => s + e.amount, 0);
-  const accountBalanceInit = d.accountBalanceInit || 0;
+  const accountBalanceInit = (d.accountBalanceInit != null) ? d.accountBalanceInit : incomeVal;
   const accountBalance = accountBalanceInit - checkedTotal - nonDefaultExpenses;
   const abEl = document.getElementById('account-balance-display');
   if (document.activeElement !== abEl) {
