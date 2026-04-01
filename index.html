@@ -204,6 +204,8 @@
   .row-edit:active { background: #5a7ad4; color: white; }
   .row-copy { width: 22px; height: 22px; border-radius: 50%; border: none; background: #e8ffef; color: #3a9e6a; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
   .row-copy:active { background: #3a9e6a; color: white; }
+  .row-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--pink-border); background: var(--white); color: transparent; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .row-check.row-check-on { background: var(--pink-main); border-color: var(--pink-main); color: white; }
 
   /* ===== TOTAL BAR ===== */
   .total-bar {
@@ -455,6 +457,13 @@
     <div class="field-label">残高</div>
     <div class="field-row">
       <div class="field-input-wrap"><input class="field-input readonly" type="text" id="balance-display" value="0" readonly><span class="field-unit-inside">円</span></div>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">口座残高</div>
+    <div class="field-row">
+      <div class="field-input-wrap"><input class="field-input" type="text" id="account-balance-display" value="0" inputmode="tel" oninput="formatAccountBalanceInput(this)" onblur="saveAccountBalance()"><span class="field-unit-inside">円</span></div>
     </div>
   </div>
 
@@ -1040,6 +1049,26 @@ function recalc() {
 
   document.getElementById('holdings-display').value = holdings.toLocaleString();
   document.getElementById('balance-display').value = balance.toLocaleString();
+
+  // 口座残高 = accountBalanceInit - チェック済みデフォルト合計 - 通常支出合計
+  const checkedDefaults = d.checkedDefaults || {};
+  const currentKey = getCurrentKey();
+  const checkedTotal = (state.settings.defaults || [])
+    .filter(e => (e.since || '2026-03') <= currentKey && checkedDefaults[e.defId])
+    .reduce((s, e) => {
+      const eff = getEffectiveDefault(e, d.overrides || {});
+      return s + (eff ? eff.amount : 0);
+    }, 0);
+  const nonDefaultExpenses = (d.expenses || [])
+    .filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用')
+    .reduce((s, e) => s + e.amount, 0);
+  const accountBalanceInit = d.accountBalanceInit || 0;
+  const accountBalance = accountBalanceInit - checkedTotal - nonDefaultExpenses;
+  const abEl = document.getElementById('account-balance-display');
+  if (document.activeElement !== abEl) {
+    abEl.value = accountBalance.toLocaleString();
+  }
+
   renderTotalBar();
 }
 
@@ -1102,8 +1131,12 @@ function renderExpenseList() {
     return;
   }
 
-  const defaultRows = effectiveDefaults.map(e => `
-    <div class="expense-row" style="background:#fdf8fb;">
+  const checkedDefaults = d.checkedDefaults || {};
+  const defaultRows = effectiveDefaults.map(e => {
+    const isChecked = !!checkedDefaults[e.defId];
+    return `
+    <div class="expense-row" style="background:#fdf8fb;${isChecked ? 'opacity:0.55;' : ''}">
+      <button class="row-check${isChecked ? ' row-check-on' : ''}" onclick="toggleDefaultCheck('${e.defId}')" title="${isChecked ? '支払済み' : '未払い'}">✓</button>
       <span class="row-date" style="font-size:10px;color:#ccc;min-width:28px;">毎月</span>
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item || ''}</span>
@@ -1112,7 +1145,8 @@ function renderExpenseList() {
       <button class="row-edit" onclick="openEditDefault('${e.defId}')">✎</button>
       <button class="row-del" onclick="deleteDefaultForMonth('${e.defId}')">×</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   const expenseRows = expenses.map((e, i) => `
     <div class="expense-row">
@@ -1349,6 +1383,47 @@ function saveFoodBudgetOverride() {
   }
   saveData();
   recalc();
+}
+
+// ===== 口座残高 =====
+function toggleDefaultCheck(defId) {
+  const d = getCurrentData();
+  if (!d.checkedDefaults) d.checkedDefaults = {};
+  d.checkedDefaults[defId] = !d.checkedDefaults[defId];
+  if (!d.checkedDefaults[defId]) delete d.checkedDefaults[defId];
+  saveData();
+  renderExpenseList();
+  recalc();
+}
+
+function saveAccountBalance() {
+  const el = document.getElementById('account-balance-display');
+  const entered = parseFloat((el.value || '').replace(/,/g, ''));
+  if (isNaN(entered)) { recalc(); return; }
+  const d = getCurrentData();
+  const checkedDefaults = d.checkedDefaults || {};
+  const currentKey = getCurrentKey();
+  const checkedTotal = (state.settings.defaults || [])
+    .filter(e => (e.since || '2026-03') <= currentKey && checkedDefaults[e.defId])
+    .reduce((s, e) => {
+      const eff = getEffectiveDefault(e, d.overrides || {});
+      return s + (eff ? eff.amount : 0);
+    }, 0);
+  const nonDefaultExpenses = (d.expenses || [])
+    .filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用')
+    .reduce((s, e) => s + e.amount, 0);
+  // 表示値から逆算してinitを保存
+  d.accountBalanceInit = entered + checkedTotal + nonDefaultExpenses;
+  saveData();
+  recalc();
+}
+
+function formatAccountBalanceInput(el) {
+  const pos = el.selectionStart;
+  const raw = el.value.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/,/g, '');
+  if (raw === '' || raw === '-') return;
+  const n = parseFloat(raw);
+  if (!isNaN(n)) { el.value = n.toLocaleString(); el.setSelectionRange(pos, pos); }
 }
 
 // ===== SETTINGS =====
