@@ -367,6 +367,15 @@
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
+  /* ===== ENTRY TABS ===== */
+  .entry-tab {
+    flex: 1; padding: 7px 0; font-size: 13px; font-weight: 700;
+    font-family: 'LINESeedJP', sans-serif; border: none;
+    border-radius: var(--radius); background: var(--pink-border);
+    color: var(--text-dark); cursor: pointer; transition: all 0.2s;
+  }
+  .entry-tab.active { background: var(--pink-main); color: white; }
+
   /* ===== EMPTY STATE ===== */
   .empty-state {
     text-align: center; padding: 30px 0; color: var(--pink-mid);
@@ -469,9 +478,12 @@
 
   </div><!-- /ptr-zone -->
 
-  <div class="section-title">支出登録</div>
+  <div style="display:flex;gap:4px;margin-bottom:8px;">
+    <button id="entry-tab-expense" class="entry-tab active" onclick="switchEntryTab('expense')">支出</button>
+    <button id="entry-tab-planned" class="entry-tab" onclick="switchEntryTab('planned')">予定支出</button>
+  </div>
 
-  <div class="entry-form">
+  <div id="entry-form-expense" class="entry-form">
     <div class="select-wrap">
       <select id="entry-category">
         <option value="">用途</option>
@@ -494,9 +506,27 @@
     <button class="register-btn" onclick="addExpense()">登録</button>
   </div>
 
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-    <span style="font-size:12px;font-weight:700;color:var(--text-dark);">予定支出</span>
-    <button onclick="openPlannedSheet()" style="padding:4px 12px;border-radius:20px;border:none;background:var(--pink-main);color:white;font-family:'LINESeedJP',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">＋ 追加</button>
+  <div id="entry-form-planned" class="entry-form" style="display:none;">
+    <div class="select-wrap">
+      <select id="planned-category">
+        <option value="">用途</option>
+        <option value="食費">食費</option>
+        <option value="外食">外食</option>
+        <option value="交通費">交通費</option>
+        <option value="貯金">貯金</option>
+        <option value="NISA">NISA</option>
+        <option value="JO1">JO1</option>
+        <option value="その他">その他</option>
+        <option value="貯金使用">貯金使用</option>
+        <option value="NISA使用">NISA使用</option>
+        <option value="JO1使用">JO1使用</option>
+      </select>
+      <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+    </div>
+    <input class="text-input" type="text" id="planned-item" placeholder="品目" onkeydown="if(event.key==='Enter')addPlannedExpense()">
+    <button class="sign-btn" type="button" onclick="toggleSign('planned-amount')">±</button>
+    <input class="amount-input" type="text" id="planned-amount" placeholder="金額" inputmode="tel" oninput="formatNumberInput(this)" onkeydown="if(event.key==='Enter')addPlannedExpense()">
+    <button class="register-btn" onclick="addPlannedExpense()">登録</button>
   </div>
 
   <div class="expense-table scrollable" id="expense-list">
@@ -727,40 +757,6 @@
     <span>同期</span>
   </button>
 </nav>
-
-<!-- PLANNED EXPENSE SHEET -->
-<div class="dropdown-overlay" id="planned-overlay" onclick="closePlannedSheet(event)">
-  <div class="dropdown-sheet">
-    <h3>予定支出を追加</h3>
-    <div class="edit-form">
-      <div class="edit-form-row">
-        <select class="edit-select" id="planned-category">
-          <option value="">用途</option>
-          <option value="食費">食費</option>
-          <option value="外食">外食</option>
-          <option value="交通費">交通費</option>
-          <option value="貯金">貯金</option>
-          <option value="NISA">NISA</option>
-          <option value="JO1">JO1</option>
-          <option value="その他">その他</option>
-          <option value="貯金使用">貯金使用</option>
-          <option value="NISA使用">NISA使用</option>
-          <option value="JO1使用">JO1使用</option>
-        </select>
-      </div>
-      <div class="edit-form-row">
-        <input class="edit-text" type="text" id="planned-item" placeholder="品目">
-      </div>
-      <div class="edit-form-row">
-        <div style="flex:1;display:flex;border:2px solid var(--pink-border);border-radius:8px;background:var(--white);overflow:hidden;">
-          <button type="button" onclick="toggleSign('planned-amount')" style="padding:10px 12px;background:none;border:none;border-right:2px solid var(--pink-border);font-family:'LINESeedJP',sans-serif;font-size:15px;font-weight:700;color:var(--text-dark);cursor:pointer;flex-shrink:0;">±</button>
-          <input class="edit-amount" type="text" id="planned-amount" placeholder="金額" inputmode="tel" style="border:none;border-radius:0;flex:1;" oninput="formatNumberInput(this)" onkeydown="if(event.key==='Enter')addPlannedExpense()">
-        </div>
-      </div>
-      <button class="edit-save-btn" onclick="addPlannedExpense()">登録</button>
-    </div>
-  </div>
-</div>
 
 <!-- FILTER SHEET -->
 <div class="dropdown-overlay" id="filter-overlay" onclick="closeFilterSheet(event)">
@@ -1475,20 +1471,15 @@ function toggleDefaultCheck(defId) {
   recalc();
 }
 
+// ===== エントリータブ切り替え =====
+function switchEntryTab(tab) {
+  document.getElementById('entry-form-expense').style.display = tab === 'expense' ? 'flex' : 'none';
+  document.getElementById('entry-form-planned').style.display = tab === 'planned' ? 'flex' : 'none';
+  document.getElementById('entry-tab-expense').classList.toggle('active', tab === 'expense');
+  document.getElementById('entry-tab-planned').classList.toggle('active', tab === 'planned');
+}
+
 // ===== 予定支出 =====
-function openPlannedSheet() {
-  document.getElementById('planned-category').value = '';
-  document.getElementById('planned-item').value = '';
-  document.getElementById('planned-amount').value = '';
-  document.getElementById('planned-overlay').classList.add('show');
-}
-
-function closePlannedSheet(e) {
-  if (e.target === document.getElementById('planned-overlay')) {
-    document.getElementById('planned-overlay').classList.remove('show');
-  }
-}
-
 function addPlannedExpense() {
   const cat = document.getElementById('planned-category').value;
   const item = document.getElementById('planned-item').value.trim();
@@ -1499,7 +1490,9 @@ function addPlannedExpense() {
   if (!d.plannedExpenses) d.plannedExpenses = [];
   d.plannedExpenses.push({ id: String(Date.now()), category: cat, item: item || '', amount });
   saveData();
-  document.getElementById('planned-overlay').classList.remove('show');
+  document.getElementById('planned-category').value = '';
+  document.getElementById('planned-item').value = '';
+  document.getElementById('planned-amount').value = '';
   renderExpenseList();
   recalc();
   const list = document.getElementById('expense-list');
