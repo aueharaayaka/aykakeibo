@@ -2083,7 +2083,9 @@ function showScreen(name) {
 
 // ===== BACKUP / RESTORE =====
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwVZvsBH4NPWyOjmvW3KdEukwMWlXTG5Cf9kG3KFurGPAp1rVB73J1nnNWw92cYxp1D/exec';
-fetch(GAS_URL + '?ping=1').catch(() => {}); // GASインスタンスをウォームアップ
+
+// GASウォームアップ（Promiseとして保持し、起動時フェッチで待機できるようにする）
+const _gasWarmup = fetch(GAS_URL + '?ping=1').catch(() => {});
 
 // ===== 自動同期 =====
 let _autoSyncTimer = null;
@@ -2120,19 +2122,28 @@ document.addEventListener('visibilitychange', () => {
 (async () => {
   const hasLocalData = !!localStorage.getItem('kakeibo_state');
   if (!state.settings.autoSync && hasLocalData) return;
-  try {
-    const res = await fetch(GAS_URL + '?t=' + Date.now());
-    const text = await res.text();
-    if (!text || text === '{}') return;
-    const parsed = JSON.parse(text);
-    state = { ...state, ...parsed };
-    const now = new Date();
-    state.currentYear = now.getFullYear();
-    state.currentMonth = now.getMonth() + 1;
-    saveData();
-    renderAll();
-    if (!hasLocalData) showToast('クラウドからデータを復元しました');
-  } catch(e) {}
+  if (!hasLocalData) showToast('クラウドからデータを復元中...');
+  // ウォームアップ完了を待ってからフェッチ（コールドスタート対策）
+  await _gasWarmup;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(GAS_URL + '?t=' + Date.now());
+      const text = await res.text();
+      if (!text || text === '{}') return;
+      const parsed = JSON.parse(text);
+      state = { ...state, ...parsed };
+      const now = new Date();
+      state.currentYear = now.getFullYear();
+      state.currentMonth = now.getMonth() + 1;
+      saveData();
+      renderAll();
+      if (!hasLocalData) showToast('クラウドからデータを復元しました');
+      return;
+    } catch(e) {
+      if (attempt < 2) await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+    }
+  }
+  if (!hasLocalData) showToast('クラウドへの接続に失敗しました');
 })();
 
 function showBackupSheet() {
