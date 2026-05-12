@@ -2105,25 +2105,6 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// ローカルデータが空のとき（キャッシュ削除後など）のみクラウドから復元
-// ※autoSync ON/OFFに関わらず実行。awaitより前にshowToastを呼ぶとTDZエラーになるため呼ばない
-if (!localStorage.getItem('kakeibo_state')) {
-  (async () => {
-    try {
-      const res = await fetch(GAS_URL + '?t=' + Date.now());
-      const text = await res.text();
-      if (!text || text === '{}') return;
-      const parsed = JSON.parse(text);
-      state = { ...state, ...parsed };
-      const now = new Date();
-      state.currentYear = now.getFullYear();
-      state.currentMonth = now.getMonth() + 1;
-      saveData();
-      renderAll();
-      showToast('クラウドからデータを復元しました');
-    } catch(e) {}
-  })();
-}
 
 function showBackupSheet() {
   document.getElementById('backup-overlay').classList.add('show');
