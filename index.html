@@ -447,6 +447,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
   </div>
+  <div id="sync-status" style="text-align:right;font-size:10px;color:#bbb;min-height:14px;margin-top:-8px;margin-bottom:4px;"></div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;">
     <div class="field-group" style="margin-bottom:0;">
@@ -959,8 +960,10 @@ let state = {
 let editTarget = null; // {type:'expense'|'default', index, defId}
 
 // ===== STORAGE =====
+let appReady = false;
 function saveData() {
   try { localStorage.setItem('kakeibo_state', JSON.stringify(state)); } catch(e) {}
+  if (appReady) scheduleAutoSync();
 }
 function loadData() {
   try {
@@ -990,6 +993,7 @@ if (state.currentYear < 2026 || (state.currentYear === 2026 && state.currentMont
 }
 // 上限なし（2026年3月以降であれば何年でも利用可能）
 renderAll();
+appReady = true;
 fetchHolidays(); // バックグラウンドで最新祝日をAPIから取得
 
 // ===== MONTH KEY =====
@@ -2069,6 +2073,46 @@ function showScreen(name) {
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwVZvsBH4NPWyOjmvW3KdEukwMWlXTG5Cf9kG3KFurGPAp1rVB73J1nnNWw92cYxp1D/exec';
 fetch(GAS_URL + '?ping=1').catch(() => {}); // GASインスタンスをウォームアップ
 
+// ===== AUTO SYNC =====
+let autoSyncTimer = null;
+
+function setSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (status === 'saved')   { el.textContent = '☁️ 保存済み'; el.style.color = '#bbb'; }
+  if (status === 'pending') { el.textContent = '● 未保存';   el.style.color = '#f0518a'; }
+  if (status === 'syncing') { el.textContent = '↑ 保存中...'; el.style.color = '#f0518a'; }
+}
+
+function scheduleAutoSync() {
+  setSyncStatus('pending');
+  clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(syncUploadSilent, 10000);
+}
+
+async function syncUploadSilent() {
+  setSyncStatus('syncing');
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(state)
+    });
+    setSyncStatus('saved');
+  } catch(e) {
+    setSyncStatus('pending');
+  }
+}
+
+// アプリがバックグラウンドに切り替わったとき即アップロード
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    clearTimeout(autoSyncTimer);
+    syncUploadSilent();
+  }
+});
+
 function showBackupSheet() {
   document.getElementById('backup-overlay').classList.add('show');
 }
@@ -2082,13 +2126,14 @@ function closeBackupSheet(e) {
 async function syncUpload() {
   try {
     showToast('保存中...');
-    const json = JSON.stringify(state);
+    clearTimeout(autoSyncTimer);
     await fetch(GAS_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
-      body: json
+      body: JSON.stringify(state)
     });
+    setSyncStatus('saved');
     showToast('クラウドに保存しました！');
     document.getElementById('backup-overlay').classList.remove('show');
   } catch(e) {
