@@ -805,6 +805,18 @@
   <div class="dropdown-sheet">
     <h3>データ同期</h3>
     <p style="font-size:12px;color:#999;margin-bottom:16px;">Googleスプレッドシートを経由してPC・スマホ間でデータを同期できます。</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--pink-light);border:1.5px solid var(--pink-border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text-dark);">自動同期</div>
+        <div style="font-size:11px;color:#999;margin-top:2px;">変更時に自動でクラウドに保存</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;">
+        <input type="checkbox" id="auto-sync-toggle" style="opacity:0;width:0;height:0;position:absolute;" onchange="toggleAutoSync(this.checked)">
+        <span id="auto-sync-slider" style="position:absolute;inset:0;border-radius:12px;background:#ddd;transition:background 0.2s;cursor:pointer;" onclick="document.getElementById('auto-sync-toggle').click()">
+          <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);" id="auto-sync-knob"></span>
+        </span>
+      </label>
+    </div>
     <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存</button>
     <button class="edit-save-btn" onclick="syncDownload()" style="background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む</button>
   </div>
@@ -951,7 +963,8 @@ let state = {
     nisaInitial: 0,
     nisaGain: 0,
     defaults: [], // [{defId, category, item, amount}]
-    vacations: [] // [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
+    vacations: [], // [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
+    autoSync: false // 自動同期
   }
 };
 
@@ -961,6 +974,7 @@ let editTarget = null; // {type:'expense'|'default', index, defId}
 // ===== STORAGE =====
 function saveData() {
   try { localStorage.setItem('kakeibo_state', JSON.stringify(state)); } catch(e) {}
+  scheduleAutoSync();
 }
 function loadData() {
   try {
@@ -2069,8 +2083,78 @@ function showScreen(name) {
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwVZvsBH4NPWyOjmvW3KdEukwMWlXTG5Cf9kG3KFurGPAp1rVB73J1nnNWw92cYxp1D/exec';
 fetch(GAS_URL + '?ping=1').catch(() => {}); // GASインスタンスをウォームアップ
 
+// ===== 自動同期 =====
+let _autoSyncTimer = null;
+
+function scheduleAutoSync() {
+  if (!state.settings.autoSync) return;
+  clearTimeout(_autoSyncTimer);
+  _autoSyncTimer = setTimeout(() => {
+    if (!state.settings.autoSync) return;
+    fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(state)
+    }).catch(() => {});
+  }, 2000);
+}
+
+// ページが非表示になったとき（アプリ切り替えやホーム画面へ）に即時アップロード
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && state.settings.autoSync) {
+    clearTimeout(_autoSyncTimer);
+    fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(state)
+    }).catch(() => {});
+  }
+});
+
+// 起動時にサイレントでクラウドからダウンロードして最新データを反映
+(async () => {
+  if (!state.settings.autoSync) return;
+  try {
+    const res = await fetch(GAS_URL + '?t=' + Date.now());
+    const text = await res.text();
+    if (!text || text === '{}') return;
+    const parsed = JSON.parse(text);
+    state = { ...state, ...parsed };
+    const now = new Date();
+    state.currentYear = now.getFullYear();
+    state.currentMonth = now.getMonth() + 1;
+    saveData();
+    renderAll();
+  } catch(e) {}
+})();
+
 function showBackupSheet() {
   document.getElementById('backup-overlay').classList.add('show');
+  renderAutoSyncToggle();
+}
+
+function renderAutoSyncToggle() {
+  const enabled = !!(state.settings.autoSync);
+  const cb = document.getElementById('auto-sync-toggle');
+  const slider = document.getElementById('auto-sync-slider');
+  const knob = document.getElementById('auto-sync-knob');
+  if (!cb) return;
+  cb.checked = enabled;
+  slider.style.background = enabled ? 'var(--pink-main)' : '#ddd';
+  knob.style.transform = enabled ? 'translateX(20px)' : 'translateX(0)';
+}
+
+function toggleAutoSync(enabled) {
+  state.settings.autoSync = enabled;
+  saveData();
+  renderAutoSyncToggle();
+  if (enabled) {
+    showToast('自動同期をオンにしました');
+  } else {
+    showToast('自動同期をオフにしました');
+  }
 }
 function closeBackupSheet(e) {
   if (e.target === document.getElementById('backup-overlay')) {
