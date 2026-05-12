@@ -817,8 +817,10 @@
         </span>
       </label>
     </div>
-    <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存</button>
-    <button class="edit-save-btn" onclick="syncDownload()" style="background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む</button>
+    <div id="manual-sync-btns">
+      <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存</button>
+      <button class="edit-save-btn" onclick="syncDownload()" style="background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む</button>
+    </div>
   </div>
 </div>
 
@@ -2144,6 +2146,8 @@ function renderAutoSyncToggle() {
   cb.checked = enabled;
   slider.style.background = enabled ? 'var(--pink-main)' : '#ddd';
   knob.style.transform = enabled ? 'translateX(20px)' : 'translateX(0)';
+  const manualBtns = document.getElementById('manual-sync-btns');
+  if (manualBtns) manualBtns.style.display = enabled ? 'none' : '';
 }
 
 function toggleAutoSync(enabled) {
