@@ -958,6 +958,7 @@ let state = {
   currentYear: 2026,
   currentMonth: 3,
   totalFilter: '全体',
+  lastModified: 0, // 最終更新タイムスタンプ（自動同期の新旧判定に使用）
   data: {}, // "YYYY-MM" => { income, expenses:[], overrides:{defId:{deleted,category,item,amount}} }
   settings: {
     dailyFood: 0,
@@ -975,6 +976,7 @@ let editTarget = null; // {type:'expense'|'default', index, defId}
 
 // ===== STORAGE =====
 function saveData() {
+  state.lastModified = Date.now();
   try { localStorage.setItem('kakeibo_state', JSON.stringify(state)); } catch(e) {}
   scheduleAutoSync();
 }
@@ -2104,6 +2106,29 @@ document.addEventListener('visibilitychange', () => {
     fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(state) }).catch(() => {});
   }
 });
+
+// 起動時の自動ダウンロード
+// autoSync ONの場合：クラウドがローカルより新しければ適用（タイムスタンプ比較）
+// ローカルデータがない場合（キャッシュ削除後）：autoSync ON/OFFに関わらず復元を試みる
+(async () => {
+  const hasLocalData = !!localStorage.getItem('kakeibo_state');
+  if (!state.settings.autoSync && hasLocalData) return;
+  try {
+    const res = await fetch(GAS_URL + '?t=' + Date.now());
+    const text = await res.text();
+    if (!text || text === '{}') return;
+    const parsed = JSON.parse(text);
+    // クラウドの lastModified がローカル以下なら適用しない（ローカルが最新）
+    if (hasLocalData && (parsed.lastModified || 0) <= (state.lastModified || 0)) return;
+    state = { ...state, ...parsed };
+    const now = new Date();
+    state.currentYear = now.getFullYear();
+    state.currentMonth = now.getMonth() + 1;
+    saveData();
+    renderAll();
+    showToast(hasLocalData ? 'クラウドから最新データを取得しました' : 'クラウドからデータを復元しました');
+  } catch(e) {}
+})();
 
 
 function showBackupSheet() {
