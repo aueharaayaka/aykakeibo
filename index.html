@@ -2116,8 +2116,10 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // 起動時にサイレントでクラウドからダウンロードして最新データを反映
+// autoSync ONの場合は常に、OFFでもローカルデータが空の場合はクラウドから復元を試みる
 (async () => {
-  if (!state.settings.autoSync) return;
+  const hasLocalData = !!localStorage.getItem('kakeibo_state');
+  if (!state.settings.autoSync && hasLocalData) return;
   try {
     const res = await fetch(GAS_URL + '?t=' + Date.now());
     const text = await res.text();
@@ -2129,6 +2131,7 @@ document.addEventListener('visibilitychange', () => {
     state.currentMonth = now.getMonth() + 1;
     saveData();
     renderAll();
+    if (!hasLocalData) showToast('クラウドからデータを復元しました');
   } catch(e) {}
 })();
 
