@@ -2354,10 +2354,7 @@ async function uploadNow(reason) {
     return;
   }
   autoSyncInFlight = true;
-  let loadingShown = false;
   try {
-    showSyncLoading('保存中...');
-    loadingShown = true;
     // 縮小防御：直前にクラウドを確認し、クラウドの方が著しく多い／新しい場合は
     // 上書きせず逆にクラウドを取り込む
     const cloud = await fetchCloudOnce();
@@ -2397,7 +2394,6 @@ async function uploadNow(reason) {
     console.error('uploadNow error:', e);
   } finally {
     autoSyncInFlight = false;
-    if (loadingShown) hideSyncLoading();
   }
 }
 
