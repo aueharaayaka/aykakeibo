@@ -367,6 +367,26 @@
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
+  /* ===== SYNC LOADING INDICATOR ===== */
+  #sync-loading {
+    position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px);
+    left: 50%; transform: translateX(-50%) translateY(-80px);
+    display: flex; align-items: center; gap: 8px;
+    background: var(--pink-main); color: white;
+    padding: 8px 16px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    box-shadow: 0 4px 16px rgba(240,81,138,0.4);
+    transition: transform 0.25s ease;
+    z-index: 998; pointer-events: none;
+    white-space: nowrap;
+  }
+  #sync-loading.visible { transform: translateX(-50%) translateY(0); }
+  #sync-loading .sync-spinner {
+    width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white; border-radius: 50%;
+    animation: ptr-spin 0.8s linear infinite;
+  }
+
   /* ===== ENTRY TABS ===== */
   .entry-tab {
     flex: 1; padding: 7px 0; font-size: 13px; font-weight: 700;
@@ -881,6 +901,7 @@
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+<div id="sync-loading"><span class="sync-spinner"></span><span id="sync-loading-text">読み込み中...</span></div>
 
 <script>
 // 日本の祝日 2026〜2030
@@ -2204,6 +2225,22 @@ function updateAutoSyncStatus(text) {
   if (el) el.textContent = text;
 }
 
+let syncLoadingDepth = 0;
+function showSyncLoading(text) {
+  syncLoadingDepth++;
+  const el = document.getElementById('sync-loading');
+  const txt = document.getElementById('sync-loading-text');
+  if (txt && text) txt.textContent = text;
+  if (el) el.classList.add('visible');
+}
+function hideSyncLoading() {
+  syncLoadingDepth = Math.max(0, syncLoadingDepth - 1);
+  if (syncLoadingDepth === 0) {
+    const el = document.getElementById('sync-loading');
+    if (el) el.classList.remove('visible');
+  }
+}
+
 function applyAutoSyncUI(enabled) {
   const sheet = document.getElementById('backup-sheet');
   if (sheet) sheet.classList.toggle('auto-sync-on', !!enabled);
@@ -2234,6 +2271,7 @@ async function fetchCloudOnce() {
 async function startupCloudSync(reason) {
   if (autoSyncInFlight) return;
   autoSyncInFlight = true;
+  showSyncLoading('読み込み中...');
   try {
     updateAutoSyncStatus('クラウドを確認中...');
     const cloud = await fetchCloudOnce();
@@ -2291,6 +2329,7 @@ async function startupCloudSync(reason) {
     }
   } finally {
     autoSyncInFlight = false;
+    hideSyncLoading();
   }
 }
 
@@ -2309,6 +2348,7 @@ async function uploadNow(reason) {
     return;
   }
   autoSyncInFlight = true;
+  showSyncLoading('保存中...');
   try {
     // 縮小防御：直前にクラウドを確認し、クラウドの方が著しく多い／新しい場合は
     // 上書きせず逆にクラウドを取り込む
@@ -2348,6 +2388,7 @@ async function uploadNow(reason) {
     updateAutoSyncStatus('保存失敗（後で再試行）');
   } finally {
     autoSyncInFlight = false;
+    hideSyncLoading();
   }
 }
 
