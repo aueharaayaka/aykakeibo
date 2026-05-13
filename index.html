@@ -807,6 +807,11 @@
     <p style="font-size:12px;color:#999;margin-bottom:16px;">Googleスプレッドシートを経由してPC・スマホ間でデータを同期できます。</p>
     <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存</button>
     <button class="edit-save-btn" onclick="syncDownload()" style="background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む</button>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:#555;">
+      <input type="checkbox" id="auto-sync-toggle" onchange="toggleAutoSync(this.checked)">
+      自動同期を有効にする
+    </label>
+    <div id="auto-sync-status" style="font-size:11px;color:#999;margin-top:6px;">自動同期: OFF</div>
   </div>
 </div>
 
@@ -951,8 +956,10 @@ let state = {
     nisaInitial: 0,
     nisaGain: 0,
     defaults: [], // [{defId, category, item, amount}]
-    vacations: [] // [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
-  }
+    vacations: [], // [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
+    autoSync: false
+  },
+  meta: { updatedAt: 0 }
 };
 
 // 編集中の対象
@@ -960,7 +967,10 @@ let editTarget = null; // {type:'expense'|'default', index, defId}
 
 // ===== STORAGE =====
 function saveData() {
+  state.meta = state.meta || {};
+  state.meta.updatedAt = Date.now();
   try { localStorage.setItem('kakeibo_state', JSON.stringify(state)); } catch(e) {}
+  scheduleAutoSync();
 }
 function loadData() {
   try {
@@ -975,6 +985,8 @@ function loadData() {
 // ===== INIT =====
 loadCachedHolidays(); // キャッシュ済み祝日を同期的に反映
 loadData();
+state.settings = { dailyFood: 0, goal: 0, nisaInitial: 0, nisaGain: 0, defaults: [], vacations: [], autoSync: false, ...(state.settings || {}) };
+state.meta = { updatedAt: 0, ...(state.meta || {}) };
 // 既存データにdefIdがない場合は補完、sinceがない場合は2026-03を設定
 (state.settings.defaults || []).forEach((e, i) => {
   if (!e.defId) e.defId = 'def_legacy_' + i;
@@ -991,6 +1003,10 @@ if (state.currentYear < 2026 || (state.currentYear === 2026 && state.currentMont
 // 上限なし（2026年3月以降であれば何年でも利用可能）
 renderAll();
 fetchHolidays(); // バックグラウンドで最新祝日をAPIから取得
+const autoSyncToggle = document.getElementById('auto-sync-toggle');
+if (autoSyncToggle) autoSyncToggle.checked = !!state.settings.autoSync;
+updateAutoSyncStatus(state.settings.autoSync ? '自動同期: ON' : '自動同期: OFF');
+if (state.settings.autoSync) autoSyncNow('startup');
 
 // ===== MONTH KEY =====
 function monthKey(y, m) { return `${y}-${String(m).padStart(2,'0')}`; }
@@ -2068,6 +2084,84 @@ function showScreen(name) {
 // ===== BACKUP / RESTORE =====
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwVZvsBH4NPWyOjmvW3KdEukwMWlXTG5Cf9kG3KFurGPAp1rVB73J1nnNWw92cYxp1D/exec';
 fetch(GAS_URL + '?ping=1').catch(() => {}); // GASインスタンスをウォームアップ
+let autoSyncTimer = null;
+let autoSyncInFlight = false;
+let suspendAutoSync = false;
+
+function stateHasMeaningfulData(s) {
+  if (!s) return false;
+  const hasMonthData = Object.values(s.data || {}).some(v => ((v.expenses || []).length > 0) || ((v.plannedExpenses || []).length > 0) || ((v.income || 0) !== 0));
+  const ss = s.settings || {};
+  return hasMonthData || (ss.defaults || []).length > 0 || (ss.vacations || []).length > 0 || (ss.dailyFood || 0) !== 0 || (ss.goal || 0) !== 0 || (ss.nisaInitial || 0) !== 0 || (ss.nisaGain || 0) !== 0;
+}
+
+function syncEnvelopeFromState(s) {
+  return { payload: s, updatedAt: ((s.meta || {}).updatedAt || Date.now()) };
+}
+
+function parseCloudState(text) {
+  if (!text || text === '{}') return null;
+  const parsed = JSON.parse(text);
+  if (parsed && parsed.payload) return parsed;
+  return { payload: parsed, updatedAt: ((parsed.meta || {}).updatedAt || 0) };
+}
+
+function updateAutoSyncStatus(text) {
+  const el = document.getElementById('auto-sync-status');
+  if (el) el.textContent = text;
+}
+
+function scheduleAutoSync() {
+  if (suspendAutoSync || !state.settings.autoSync) return;
+  clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(() => autoSyncNow('local-change'), 1200);
+}
+
+async function autoSyncNow(reason) {
+  if (autoSyncInFlight || !state.settings.autoSync) return;
+  autoSyncInFlight = true;
+  try {
+    updateAutoSyncStatus('自動同期: 同期中...');
+    const res = await fetch(GAS_URL + '?t=' + Date.now());
+    const text = await res.text();
+    const remoteEnv = parseCloudState(text);
+    const localHas = stateHasMeaningfulData(state);
+    const remoteHas = !!(remoteEnv && stateHasMeaningfulData(remoteEnv.payload));
+    if (!localHas && remoteHas) {
+      suspendAutoSync = true;
+      state = { ...state, ...remoteEnv.payload };
+      saveData();
+      suspendAutoSync = false;
+      renderAll();
+      updateAutoSyncStatus('自動同期: クラウドから復元');
+    } else if (!remoteHas && localHas) {
+      await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(syncEnvelopeFromState(state)) });
+      updateAutoSyncStatus('自動同期: クラウドへ保存');
+    } else if (localHas && remoteHas) {
+      const remoteUpdated = remoteEnv.updatedAt || 0;
+      const localUpdated = (state.meta || {}).updatedAt || 0;
+      if (remoteUpdated > localUpdated) {
+        suspendAutoSync = true;
+        state = { ...state, ...remoteEnv.payload };
+        saveData();
+        suspendAutoSync = false;
+        renderAll();
+        updateAutoSyncStatus('自動同期: 最新のクラウドを反映');
+      } else if (localUpdated > remoteUpdated || reason === 'startup') {
+        await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(syncEnvelopeFromState(state)) });
+        updateAutoSyncStatus('自動同期: 最新の端末データを保存');
+      } else {
+        updateAutoSyncStatus('自動同期: 同期済み');
+      }
+    } else {
+      updateAutoSyncStatus('自動同期: データなし');
+    }
+  } catch (e) {
+    updateAutoSyncStatus('自動同期: 失敗（オフライン等）');
+  } finally {
+    autoSyncInFlight = false;
+  }
+}
 
 function showBackupSheet() {
   document.getElementById('backup-overlay').classList.add('show');
@@ -2082,7 +2176,7 @@ function closeBackupSheet(e) {
 async function syncUpload() {
   try {
     showToast('保存中...');
-    const json = JSON.stringify(state);
+    const json = JSON.stringify(syncEnvelopeFromState(state));
     await fetch(GAS_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -2106,8 +2200,8 @@ async function syncDownload() {
       showToast('クラウドにデータがありません');
       return;
     }
-    const parsed = JSON.parse(text);
-    state = { ...state, ...parsed };
+    const cloud = parseCloudState(text);
+    state = { ...state, ...(cloud ? cloud.payload : {}) };
     // 読み込み後は今月を開く
     const now = new Date();
     state.currentYear = now.getFullYear();
@@ -2120,6 +2214,13 @@ async function syncDownload() {
   } catch(e) {
     showToast('読み込みに失敗しました');
   }
+}
+
+function toggleAutoSync(enabled) {
+  state.settings.autoSync = !!enabled;
+  saveData();
+  if (enabled) autoSyncNow('toggle-on');
+  else updateAutoSyncStatus('自動同期: OFF');
 }
 
 // ファイルに保存
