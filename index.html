@@ -1024,6 +1024,7 @@ let cloudSyncedOnce = false;    // true after first successful cloud reconcile t
 let isApplyingCloud = false;    // true while we're overwriting state from cloud (don't re-upload)
 let autoSyncDebounceTimer = null;
 let autoSyncInFlight = false;
+let syncLoadingDepth = 0;       // ref-counted overlay depth (must be initialized before INIT calls startupCloudSync)
 
 // ===== STORAGE =====
 function saveData() {
@@ -1074,8 +1075,9 @@ fetchHolidays(); // バックグラウンドで最新祝日をAPIから取得
 // 自動同期トグルの初期表示
 applyAutoSyncUI(state.settings.autoSync);
 updateAutoSyncStatus(state.settings.autoSync ? '自動同期: 起動中...' : '自動同期: OFF');
+// スクリプト全体の同期実行が終わってから（=GAS_URL等のconstが初期化されてから）走らせる
 if (state.settings.autoSync) {
-  startupCloudSync('startup');
+  setTimeout(() => startupCloudSync('startup'), 0);
 }
 
 // 他端末の更新を取り込むため、タブ復帰時に再同期
@@ -2225,7 +2227,6 @@ function updateAutoSyncStatus(text) {
   if (el) el.textContent = text;
 }
 
-let syncLoadingDepth = 0;
 function showSyncLoading(text) {
   syncLoadingDepth++;
   const el = document.getElementById('sync-loading');
@@ -2271,8 +2272,10 @@ async function fetchCloudOnce() {
 async function startupCloudSync(reason) {
   if (autoSyncInFlight) return;
   autoSyncInFlight = true;
-  showSyncLoading('読み込み中...');
+  let loadingShown = false;
   try {
+    showSyncLoading('読み込み中...');
+    loadingShown = true;
     updateAutoSyncStatus('クラウドを確認中...');
     const cloud = await fetchCloudOnce();
     if (!cloud || !cloud.payload) {
@@ -2327,9 +2330,12 @@ async function startupCloudSync(reason) {
     } else {
       updateAutoSyncStatus('同期済み ' + nowHHMM());
     }
+  } catch(err) {
+    updateAutoSyncStatus('同期エラー（後で再試行）');
+    console.error('startupCloudSync error:', err);
   } finally {
     autoSyncInFlight = false;
-    hideSyncLoading();
+    if (loadingShown) hideSyncLoading();
   }
 }
 
@@ -2348,8 +2354,10 @@ async function uploadNow(reason) {
     return;
   }
   autoSyncInFlight = true;
-  showSyncLoading('保存中...');
+  let loadingShown = false;
   try {
+    showSyncLoading('保存中...');
+    loadingShown = true;
     // 縮小防御：直前にクラウドを確認し、クラウドの方が著しく多い／新しい場合は
     // 上書きせず逆にクラウドを取り込む
     const cloud = await fetchCloudOnce();
@@ -2386,9 +2394,10 @@ async function uploadNow(reason) {
     updateAutoSyncStatus('同期済み ' + nowHHMM());
   } catch(e) {
     updateAutoSyncStatus('保存失敗（後で再試行）');
+    console.error('uploadNow error:', e);
   } finally {
     autoSyncInFlight = false;
-    hideSyncLoading();
+    if (loadingShown) hideSyncLoading();
   }
 }
 
