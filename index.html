@@ -806,6 +806,12 @@
     <p style="font-size:12px;color:#999;margin-bottom:16px;">Googleスプレッドシートを経由してPC・スマホ間でデータを同期できます。</p>
     <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存</button>
     <button class="edit-save-btn" onclick="syncDownload()" style="background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む</button>
+    <label style="display:flex;align-items:center;gap:10px;margin-top:16px;padding:12px;border:2px solid var(--pink-border);border-radius:8px;background:var(--pink-light);font-size:14px;color:var(--text-body);cursor:pointer;">
+      <input type="checkbox" id="auto-sync-toggle" onchange="toggleAutoSync(this.checked)" style="width:18px;height:18px;accent-color:var(--pink-main);">
+      <span style="flex:1;font-weight:700;">自動同期を有効にする</span>
+    </label>
+    <div id="auto-sync-status" style="font-size:11px;color:#999;margin-top:6px;text-align:center;">自動同期: OFF</div>
+    <p style="font-size:11px;color:#999;margin-top:8px;line-height:1.5;">起動時とタブ復帰時にクラウドの最新データを取り込み、変更があれば自動でクラウドに保存します。複数端末で使う場合はクラウドの内容が優先されます。</p>
   </div>
 </div>
 
@@ -950,16 +956,31 @@ let state = {
     nisaInitial: 0,
     nisaGain: 0,
     defaults: [], // [{defId, category, item, amount}]
-    vacations: [] // [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
-  }
+    vacations: [], // [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
+    autoSync: false
+  },
+  meta: { updatedAt: 0 }
 };
 
 // 編集中の対象
 let editTarget = null; // {type:'expense'|'default', index, defId}
 
+// ===== AUTO-SYNC FLAGS =====
+let freshCacheLoad = false;     // true if localStorage was empty on this page load
+let initComplete = false;       // true after initial render finished
+let cloudSyncedOnce = false;    // true after first successful cloud reconcile this session
+let isApplyingCloud = false;    // true while we're overwriting state from cloud (don't re-upload)
+let autoSyncDebounceTimer = null;
+let autoSyncInFlight = false;
+
 // ===== STORAGE =====
 function saveData() {
+  if (!state.meta) state.meta = { updatedAt: 0 };
+  if (initComplete && !isApplyingCloud) {
+    state.meta.updatedAt = Date.now();
+  }
   try { localStorage.setItem('kakeibo_state', JSON.stringify(state)); } catch(e) {}
+  if (initComplete && !isApplyingCloud) scheduleAutoSync();
 }
 function loadData() {
   try {
@@ -967,8 +988,14 @@ function loadData() {
     if (s) {
       const parsed = JSON.parse(s);
       state = { ...state, ...parsed };
+      state.settings = { dailyFood: 0, goal: 0, nisaInitial: 0, nisaGain: 0, defaults: [], vacations: [], autoSync: false, ...(state.settings || {}) };
+      state.meta = { updatedAt: 0, ...(state.meta || {}) };
+    } else {
+      freshCacheLoad = true;
     }
-  } catch(e) {}
+  } catch(e) {
+    freshCacheLoad = true;
+  }
 }
 
 // ===== INIT =====
@@ -989,7 +1016,23 @@ if (state.currentYear < 2026 || (state.currentYear === 2026 && state.currentMont
 }
 // 上限なし（2026年3月以降であれば何年でも利用可能）
 renderAll();
+initComplete = true;
 fetchHolidays(); // バックグラウンドで最新祝日をAPIから取得
+
+// 自動同期トグルの初期表示
+const _autoSyncToggleEl = document.getElementById('auto-sync-toggle');
+if (_autoSyncToggleEl) _autoSyncToggleEl.checked = !!state.settings.autoSync;
+updateAutoSyncStatus(state.settings.autoSync ? '自動同期: 起動中...' : '自動同期: OFF');
+if (state.settings.autoSync) {
+  startupCloudSync('startup');
+}
+
+// 他端末の更新を取り込むため、タブ復帰時に再同期
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && state.settings.autoSync) {
+    startupCloudSync('visibility');
+  }
+});
 
 // ===== MONTH KEY =====
 function monthKey(y, m) { return `${y}-${String(m).padStart(2,'0')}`; }
@@ -2068,6 +2111,219 @@ function showScreen(name) {
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwVZvsBH4NPWyOjmvW3KdEukwMWlXTG5Cf9kG3KFurGPAp1rVB73J1nnNWw92cYxp1D/exec';
 fetch(GAS_URL + '?ping=1').catch(() => {}); // GASインスタンスをウォームアップ
 
+// ===== AUTO-SYNC HELPERS =====
+function envelopeFromState() {
+  return {
+    schema: 2,
+    payload: state,
+    updatedAt: (state.meta && state.meta.updatedAt) || Date.now()
+  };
+}
+
+function parseCloudEnvelope(text) {
+  if (!text || text === '{}') return null;
+  let parsed;
+  try { parsed = JSON.parse(text); } catch(e) { return null; }
+  if (!parsed) return null;
+  if (parsed.schema === 2 && parsed.payload) {
+    return { payload: parsed.payload, updatedAt: parsed.updatedAt || 0 };
+  }
+  // レガシー形式（state そのまま）。meta.updatedAt があれば拾う
+  return { payload: parsed, updatedAt: (parsed.meta && parsed.meta.updatedAt) || 0 };
+}
+
+function stateHasMeaningfulData(s) {
+  if (!s) return false;
+  const data = s.data || {};
+  for (const k in data) {
+    const m = data[k] || {};
+    if ((m.expenses || []).length > 0) return true;
+    if ((m.plannedExpenses || []).length > 0) return true;
+    if ((m.income || 0) !== 0) return true;
+  }
+  const ss = s.settings || {};
+  if ((ss.defaults || []).length > 0) return true;
+  if ((ss.vacations || []).length > 0) return true;
+  if ((ss.dailyFood || 0) !== 0) return true;
+  if ((ss.goal || 0) !== 0) return true;
+  if ((ss.nisaInitial || 0) !== 0) return true;
+  if ((ss.nisaGain || 0) !== 0) return true;
+  return false;
+}
+
+// 件数ベースの指紋。「データが急に縮んだ」検出に使う
+function dataFingerprint(s) {
+  if (!s) return 0;
+  let n = 0;
+  const data = s.data || {};
+  for (const k in data) {
+    const m = data[k] || {};
+    n += (m.expenses || []).length;
+    n += (m.plannedExpenses || []).length;
+    n += Object.keys(m.overrides || {}).length;
+    if ((m.income || 0) !== 0) n += 1;
+  }
+  const ss = s.settings || {};
+  n += (ss.defaults || []).length;
+  n += (ss.vacations || []).length;
+  return n;
+}
+
+function updateAutoSyncStatus(text) {
+  const el = document.getElementById('auto-sync-status');
+  if (el) el.textContent = text;
+}
+
+function nowHHMM() {
+  return new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function fetchCloudOnce() {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(GAS_URL + '?t=' + Date.now());
+      const text = await res.text();
+      return parseCloudEnvelope(text);
+    } catch(e) {
+      if (attempt < 2) await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+    }
+  }
+  return null;
+}
+
+// クラウドの状態を取得してローカルと突き合わせる。
+// クラウドの方が新しい/多い場合はクラウド優先で上書き。
+// 起動時・トグルON・タブ復帰時に呼ぶ。
+async function startupCloudSync(reason) {
+  if (autoSyncInFlight) return;
+  autoSyncInFlight = true;
+  try {
+    updateAutoSyncStatus('クラウドを確認中...');
+    const cloud = await fetchCloudOnce();
+    if (!cloud || !cloud.payload) {
+      updateAutoSyncStatus('クラウド未接続（後で再試行）');
+      return;
+    }
+    const cloudHas  = stateHasMeaningfulData(cloud.payload);
+    const localHas  = stateHasMeaningfulData(state);
+    const cloudTime = cloud.updatedAt || 0;
+    const localTime = (state.meta && state.meta.updatedAt) || 0;
+    const cloudFp   = dataFingerprint(cloud.payload);
+    const localFp   = dataFingerprint(state);
+
+    // クラウド優先ポリシー（ユーザー選択：複数端末＋クラウド優先）
+    // 以下のいずれかに該当したらクラウドでローカルを上書き
+    //   1) ローカルが空 & クラウドにデータあり
+    //   2) キャッシュクリア直後（freshCacheLoad）& クラウドにデータあり
+    //      → ユーザーが一部だけ入力してしまった部分復元状態を防ぐ
+    //   3) クラウドの件数がローカルより多い
+    //   4) クラウドの updatedAt がローカルより新しい（同件数でも更新あり）
+    let cloudWins = false;
+    if (cloudHas && !localHas) cloudWins = true;
+    else if (cloudHas && freshCacheLoad) cloudWins = true;
+    else if (cloudHas && cloudFp > localFp) cloudWins = true;
+    else if (cloudHas && cloudTime > 0 && cloudTime > localTime) cloudWins = true;
+
+    if (cloudWins) {
+      isApplyingCloud = true;
+      const view = {
+        currentYear: state.currentYear,
+        currentMonth: state.currentMonth,
+        totalFilter: state.totalFilter
+      };
+      const settingsAuto = state.settings && state.settings.autoSync;
+      state = { ...state, ...cloud.payload, ...view };
+      state.settings = { ...(state.settings || {}), autoSync: settingsAuto };
+      state.meta = { updatedAt: cloudTime || Date.now() };
+      saveData();
+      renderAll();
+      isApplyingCloud = false;
+      cloudSyncedOnce = true;
+      freshCacheLoad = false;
+      updateAutoSyncStatus('クラウドから復元 ' + nowHHMM());
+      return;
+    }
+
+    // ローカルがクラウドと同等以上 → upload を解禁
+    cloudSyncedOnce = true;
+    freshCacheLoad = false;
+    if (localHas && (localFp > cloudFp || localTime > cloudTime)) {
+      await uploadNow('startup-local-newer');
+    } else {
+      updateAutoSyncStatus('同期済み ' + nowHHMM());
+    }
+  } finally {
+    autoSyncInFlight = false;
+  }
+}
+
+function scheduleAutoSync() {
+  if (!state.settings || !state.settings.autoSync) return;
+  if (!cloudSyncedOnce) return; // 起動時の突き合わせが終わるまで upload しない
+  clearTimeout(autoSyncDebounceTimer);
+  autoSyncDebounceTimer = setTimeout(() => uploadNow('change'), 1500);
+}
+
+async function uploadNow(reason) {
+  if (!state.settings.autoSync || !cloudSyncedOnce) return;
+  if (autoSyncInFlight) {
+    // 進行中なら少し待って再試行
+    setTimeout(() => uploadNow(reason), 1500);
+    return;
+  }
+  autoSyncInFlight = true;
+  try {
+    // 縮小防御：直前にクラウドを確認し、クラウドの方が著しく多い／新しい場合は
+    // 上書きせず逆にクラウドを取り込む
+    const cloud = await fetchCloudOnce();
+    if (cloud && stateHasMeaningfulData(cloud.payload)) {
+      const cloudFp   = dataFingerprint(cloud.payload);
+      const localFp   = dataFingerprint(state);
+      const cloudTime = cloud.updatedAt || 0;
+      const localTime = (state.meta && state.meta.updatedAt) || 0;
+      if (cloudFp > localFp + 5 && cloudTime > localTime) {
+        isApplyingCloud = true;
+        const view = {
+          currentYear: state.currentYear,
+          currentMonth: state.currentMonth,
+          totalFilter: state.totalFilter
+        };
+        const settingsAuto = state.settings && state.settings.autoSync;
+        state = { ...state, ...cloud.payload, ...view };
+        state.settings = { ...(state.settings || {}), autoSync: settingsAuto };
+        state.meta = { updatedAt: cloudTime };
+        saveData();
+        renderAll();
+        isApplyingCloud = false;
+        updateAutoSyncStatus('別端末の更新を取得 ' + nowHHMM());
+        return;
+      }
+    }
+    updateAutoSyncStatus('保存中...');
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(envelopeFromState())
+    });
+    updateAutoSyncStatus('同期済み ' + nowHHMM());
+  } catch(e) {
+    updateAutoSyncStatus('保存失敗（後で再試行）');
+  } finally {
+    autoSyncInFlight = false;
+  }
+}
+
+async function toggleAutoSync(enabled) {
+  state.settings.autoSync = !!enabled;
+  cloudSyncedOnce = false; // ON/OFFどちらでも再突き合わせを要求
+  saveData();
+  if (enabled) {
+    await startupCloudSync('toggle-on');
+  } else {
+    updateAutoSyncStatus('自動同期: OFF');
+  }
+}
 
 function showBackupSheet() {
   document.getElementById('backup-overlay').classList.add('show');
@@ -2078,16 +2334,21 @@ function closeBackupSheet(e) {
   }
 }
 
-// クラウドに保存
+// クラウドに保存（手動）
 async function syncUpload() {
   try {
     showToast('保存中...');
+    // 手動でも meta.updatedAt を更新してからエンベロープ送信
+    if (!state.meta) state.meta = { updatedAt: 0 };
+    state.meta.updatedAt = Date.now();
+    try { localStorage.setItem('kakeibo_state', JSON.stringify(state)); } catch(e) {}
     await fetch(GAS_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(state)
+      body: JSON.stringify(envelopeFromState())
     });
+    cloudSyncedOnce = true; // 手動アップロード後は upload を解禁
     showToast('クラウドに保存しました！');
     document.getElementById('backup-overlay').classList.remove('show');
   } catch(e) {
@@ -2095,23 +2356,33 @@ async function syncUpload() {
   }
 }
 
-// クラウドから読み込む
+// クラウドから読み込む（手動）
 async function syncDownload() {
   try {
     showToast('読み込み中...');
     const res = await fetch(GAS_URL + '?t=' + Date.now());
     const text = await res.text();
-    if (!text || text === '{}') {
+    const cloud = parseCloudEnvelope(text);
+    if (!cloud || !cloud.payload) {
       showToast('クラウドにデータがありません');
       return;
     }
-    const parsed = JSON.parse(text);
-    state = { ...state, ...parsed };
+    isApplyingCloud = true;
+    const settingsAuto = state.settings && state.settings.autoSync;
+    state = { ...state, ...cloud.payload };
+    state.settings = { ...(state.settings || {}), autoSync: settingsAuto };
+    state.meta = { updatedAt: cloud.updatedAt || Date.now() };
     // 読み込み後は今月を開く
     const now = new Date();
     state.currentYear = now.getFullYear();
     state.currentMonth = now.getMonth() + 1;
+    if (state.currentYear < 2026 || (state.currentYear === 2026 && state.currentMonth < 3)) {
+      state.currentYear = 2026; state.currentMonth = 3;
+    }
     saveData();
+    isApplyingCloud = false;
+    cloudSyncedOnce = true;
+    freshCacheLoad = false;
     showScreen('top');
     renderAll();
     document.getElementById('backup-overlay').classList.remove('show');
