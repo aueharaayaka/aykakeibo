@@ -422,6 +422,32 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
+
+  /* ===== TOGGLE SWITCH ===== */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 14px;
+    border: 2px solid var(--pink-border); border-radius: 12px;
+    background: var(--pink-light);
+  }
+  .toggle-label { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+  .toggle-switch { position: relative; display: inline-block; width: 52px; height: 30px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #d6d6d6; border-radius: 999px;
+    transition: background 0.2s ease;
+  }
+  .toggle-track::before {
+    content: ""; position: absolute;
+    height: 24px; width: 24px; left: 3px; top: 3px;
+    background: var(--white); border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    transition: transform 0.2s ease;
+  }
+  .toggle-switch input:checked + .toggle-track { background: var(--pink-main); }
+  .toggle-switch input:checked + .toggle-track::before { transform: translateX(22px); }
+  .auto-sync-on .manual-sync-buttons { display: none; }
 </style>
 </head>
 <body>
@@ -801,17 +827,22 @@
 
 <!-- BACKUP SHEET -->
 <div class="dropdown-overlay" id="backup-overlay" onclick="closeBackupSheet(event)">
-  <div class="dropdown-sheet">
+  <div class="dropdown-sheet" id="backup-sheet">
     <h3>データ同期</h3>
     <p style="font-size:12px;color:#999;margin-bottom:16px;">Googleスプレッドシートを経由してPC・スマホ間でデータを同期できます。</p>
-    <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存</button>
-    <button class="edit-save-btn" onclick="syncDownload()" style="background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む</button>
-    <label style="display:flex;align-items:center;gap:10px;margin-top:16px;padding:12px;border:2px solid var(--pink-border);border-radius:8px;background:var(--pink-light);font-size:14px;color:var(--text-body);cursor:pointer;">
-      <input type="checkbox" id="auto-sync-toggle" onchange="toggleAutoSync(this.checked)" style="width:18px;height:18px;accent-color:var(--pink-main);">
-      <span style="flex:1;font-weight:700;">自動同期を有効にする</span>
-    </label>
-    <div id="auto-sync-status" style="font-size:11px;color:#999;margin-top:6px;text-align:center;">自動同期: OFF</div>
-    <p style="font-size:11px;color:#999;margin-top:8px;line-height:1.5;">起動時とタブ復帰時にクラウドの最新データを取り込み、変更があれば自動でクラウドに保存します。複数端末で使う場合はクラウドの内容が優先されます。</p>
+    <div class="toggle-row" style="margin-bottom:14px;">
+      <span class="toggle-label">自動同期</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="auto-sync-toggle" onchange="toggleAutoSync(this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+    <div id="auto-sync-status" style="font-size:11px;color:#999;margin-bottom:12px;text-align:center;">自動同期: OFF</div>
+    <div class="manual-sync-buttons">
+      <button class="edit-save-btn" onclick="syncUpload()" style="margin-bottom:10px;">☁️ クラウドに保存</button>
+      <button class="edit-save-btn" onclick="syncDownload()" style="background:#e8f0ff;color:#3a5ad4;box-shadow:none;border:2px solid #c0d0ff;">📲 クラウドから読み込む</button>
+    </div>
+    <p style="font-size:11px;color:#999;margin-top:8px;line-height:1.5;">自動同期ONで起動時・タブ復帰時にクラウドの最新データを取り込み、変更があれば自動保存します。複数端末で使う場合はクラウドの内容が優先されます。</p>
   </div>
 </div>
 
@@ -1020,8 +1051,7 @@ initComplete = true;
 fetchHolidays(); // バックグラウンドで最新祝日をAPIから取得
 
 // 自動同期トグルの初期表示
-const _autoSyncToggleEl = document.getElementById('auto-sync-toggle');
-if (_autoSyncToggleEl) _autoSyncToggleEl.checked = !!state.settings.autoSync;
+applyAutoSyncUI(state.settings.autoSync);
 updateAutoSyncStatus(state.settings.autoSync ? '自動同期: 起動中...' : '自動同期: OFF');
 if (state.settings.autoSync) {
   startupCloudSync('startup');
@@ -2174,6 +2204,13 @@ function updateAutoSyncStatus(text) {
   if (el) el.textContent = text;
 }
 
+function applyAutoSyncUI(enabled) {
+  const sheet = document.getElementById('backup-sheet');
+  if (sheet) sheet.classList.toggle('auto-sync-on', !!enabled);
+  const toggle = document.getElementById('auto-sync-toggle');
+  if (toggle) toggle.checked = !!enabled;
+}
+
 function nowHHMM() {
   return new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 }
@@ -2318,6 +2355,7 @@ async function toggleAutoSync(enabled) {
   state.settings.autoSync = !!enabled;
   cloudSyncedOnce = false; // ON/OFFどちらでも再突き合わせを要求
   saveData();
+  applyAutoSyncUI(enabled);
   if (enabled) {
     await startupCloudSync('toggle-on');
   } else {
