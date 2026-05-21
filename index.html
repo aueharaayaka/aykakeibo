@@ -1162,29 +1162,34 @@ function countWeekdays(year, month) {
   return count;
 }
 
-// 表示中の月の「月末までに残っている平日」を返す（今日は含まない）。
-// 過去月: 0。 当月: 翌日から月末まで。 未来月: その月の全平日。
+// 表示中の月の「月末までに残っている平日」を返す。
+// 今日も月の最終平日（=月末扱い）も含まず、その間の平日数を数える。
+// 過去月: 0。 未来月: その月の (平日数 - 1)。
 function countRemainingWeekdays(year, month) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const lastDay = new Date(year, month, 0).getDate();
   const monthEnd = new Date(year, month - 1, lastDay);
   monthEnd.setHours(0, 0, 0, 0);
-  if (today >= monthEnd) return 0;
-  let startDay = 1;
-  if (today.getFullYear() === year && (today.getMonth() + 1) === month) {
-    startDay = today.getDate() + 1; // 今日は含まない
-  }
-  let count = 0;
-  for (let d = startDay; d <= lastDay; d++) {
+  if (today > monthEnd) return 0; // 過去月
+
+  // 当月の平日（土日・祝日・休業日を除く）を列挙
+  const weekdays = [];
+  for (let d = 1; d <= lastDay; d++) {
     const dow = new Date(year, month - 1, d).getDay();
     if (dow === 0 || dow === 6) continue;
     const key = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     if (JAPAN_HOLIDAYS.has(key)) continue;
     if (isVacationDay(key)) continue;
-    count++;
+    weekdays.push(d);
   }
-  return count;
+  if (weekdays.length <= 1) return 0;
+
+  const lastWorkday = weekdays[weekdays.length - 1]; // 月の最終平日 = 月末扱い
+  const isCurrentMonth = today.getFullYear() === year && (today.getMonth() + 1) === month;
+  const startThreshold = isCurrentMonth ? today.getDate() : 0; // d > startThreshold
+
+  return weekdays.filter(d => d > startThreshold && d < lastWorkday).length;
 }
 
 // ===== RECALC =====
