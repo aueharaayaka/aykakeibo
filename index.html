@@ -1162,18 +1162,18 @@ function countWeekdays(year, month) {
   return count;
 }
 
-// 表示中の月の「月末までに残っている平日」を返す。
-// 過去月: 0。 当月: 今日(含む)から月末まで。 未来月: その月の全平日。
+// 表示中の月の「月末までに残っている平日」を返す（今日は含まない）。
+// 過去月: 0。 当月: 翌日から月末まで。 未来月: その月の全平日。
 function countRemainingWeekdays(year, month) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const lastDay = new Date(year, month, 0).getDate();
   const monthEnd = new Date(year, month - 1, lastDay);
   monthEnd.setHours(0, 0, 0, 0);
-  if (today > monthEnd) return 0;
+  if (today >= monthEnd) return 0;
   let startDay = 1;
   if (today.getFullYear() === year && (today.getMonth() + 1) === month) {
-    startDay = today.getDate();
+    startDay = today.getDate() + 1; // 今日は含まない
   }
   let count = 0;
   for (let d = startDay; d <= lastDay; d++) {
