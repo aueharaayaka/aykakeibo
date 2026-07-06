@@ -227,7 +227,6 @@
   /* ===== CATEGORY TAGS ===== */
   .tag-sonohe  { background: #f9d0de; color: #d4537a; }
   .tag-shokuhi { background: #fde8b0; color: #c97d00; }
-  .tag-gaishoku { background: #d4f0e8; color: #3a9e7a; }
   .tag-kotsu   { background: #cce8ff; color: #3a7ec9; }
   .tag-chokin  { background: #f0e0ff; color: #8a5ad4; }
   .tag-jo1     { background: #dde8ff; color: #5a7ad4; }
@@ -535,7 +534,6 @@
       <select id="entry-category">
         <option value="">用途</option>
         <option value="食費">食費</option>
-        <option value="外食">外食</option>
         <option value="交通費">交通費</option>
         <option value="貯金">貯金</option>
         <option value="NISA">NISA</option>
@@ -558,7 +556,6 @@
       <select id="planned-category">
         <option value="">用途</option>
         <option value="食費">食費</option>
-        <option value="外食">外食</option>
         <option value="交通費">交通費</option>
         <option value="貯金">貯金</option>
         <option value="NISA">NISA</option>
@@ -632,7 +629,6 @@
         <select id="default-category">
           <option value="">用途</option>
           <option value="食費">食費</option>
-          <option value="外食">外食</option>
           <option value="交通費">交通費</option>
           <option value="貯金">貯金</option>
           <option value="NISA">NISA</option>
@@ -879,7 +875,6 @@
       <div class="edit-form-row">
         <select class="edit-select" id="edit-category">
           <option value="食費">食費</option>
-          <option value="外食">外食</option>
           <option value="交通費">交通費</option>
           <option value="貯金">貯金</option>
           <option value="NISA">NISA</option>
@@ -1040,6 +1035,23 @@ function saveData() {
   try { localStorage.setItem('kakeibo_state', JSON.stringify(state)); } catch(e) {}
   if (initComplete && !isApplyingCloud) scheduleAutoSync();
 }
+// ===== カテゴリ移行（外食→食費） =====
+// 「外食」カテゴリは「食費」に統合された。ローカル保存・クラウド同期・
+// バックアップ復元のいずれ由来のデータでも、残っている「外食」を「食費」へ変換する。
+function migrateGaishoku() {
+  Object.keys(state.data || {}).forEach(k => {
+    const d = state.data[k];
+    if (!d) return;
+    (d.expenses || []).forEach(e => { if (e.category === '外食') e.category = '食費'; });
+    (d.plannedExpenses || []).forEach(e => { if (e.category === '外食') e.category = '食費'; });
+    Object.keys(d.overrides || {}).forEach(id => {
+      if (d.overrides[id] && d.overrides[id].category === '外食') d.overrides[id].category = '食費';
+    });
+  });
+  ((state.settings || {}).defaults || []).forEach(e => { if (e.category === '外食') e.category = '食費'; });
+  if (state.totalFilter === '外食') state.totalFilter = '食費';
+}
+
 function loadData() {
   try {
     const s = localStorage.getItem('kakeibo_state');
@@ -1059,6 +1071,7 @@ function loadData() {
 // ===== INIT =====
 loadCachedHolidays(); // キャッシュ済み祝日を同期的に反映
 loadData();
+migrateGaishoku();
 // 既存データにdefIdがない場合は補完、sinceがない場合は2026-03を設定
 (state.settings.defaults || []).forEach((e, i) => {
   if (!e.defId) e.defId = 'def_legacy_' + i;
@@ -1274,6 +1287,7 @@ function recalc() {
 
 // ===== RENDER ALL =====
 function renderAll() {
+  migrateGaishoku(); // 外食→食費の移行（クラウド・バックアップ由来のデータも通る）
   renderMonthHeader();
   const d = getCurrentData();
   document.getElementById('income-input').value = d.income ? Number(d.income).toLocaleString() : '';
@@ -1310,7 +1324,7 @@ function goToToday() {
 
 // ===== TAG CLASS =====
 function tagClass(cat) {
-  const map = { '食費':'tag-shokuhi','外食':'tag-gaishoku','交通費':'tag-kotsu','貯金':'tag-chokin','NISA':'tag-nisa','JO1':'tag-jo1','その他':'tag-sonota','貯金使用':'tag-chokin-use','NISA使用':'tag-nisa-use','JO1使用':'tag-jo1-use' };
+  const map = { '食費':'tag-shokuhi','交通費':'tag-kotsu','貯金':'tag-chokin','NISA':'tag-nisa','JO1':'tag-jo1','その他':'tag-sonota','貯金使用':'tag-chokin-use','NISA使用':'tag-nisa-use','JO1使用':'tag-jo1-use' };
   return map[cat] || 'tag-sonota';
 }
 
@@ -1601,7 +1615,7 @@ function renderTotalBar() {
 
 // ===== FILTER SHEET =====
 function openFilterSheet() {
-  const categories = ['全体', '食費', '外食', '交通費', '貯金', 'NISA', 'JO1', 'その他', '貯金使用', 'NISA使用', 'JO1使用'];
+  const categories = ['全体', '食費', '交通費', '貯金', 'NISA', 'JO1', 'その他', '貯金使用', 'NISA使用', 'JO1使用'];
   const opts = document.getElementById('filter-options');
   opts.innerHTML = categories.map(c => `
     <div class="filter-option ${c === state.totalFilter ? 'selected' : ''}" onclick="selectFilter('${c}')">

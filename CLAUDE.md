@@ -94,7 +94,7 @@ state = {
         {
           id: string,        // unique ID (Date.now() based)
           date: 'M/D',       // e.g. '7/6' — no year, no zero padding; year comes from the month bucket key
-          category: string,  // one of the 8 categories
+          category: string,  // one of the 9 categories
           item: string,      // description
           amount: number     // can be negative (discounts)
         }
@@ -133,20 +133,23 @@ state = {
 
 ## Expense Categories
 
-There are exactly 8 categories. Do not add or remove them without updating `tagClass()`, all render functions, and the filter sheet:
+There are exactly 9 categories. Do not add or remove them without updating `tagClass()`, all render functions, and the filter sheet:
 
 | Category (Japanese) | Meaning | CSS tag class |
 |---|---|---|
-| 食費 | Groceries/food | `tag-food` |
-| 外食 | Eating out | `tag-outside` |
-| 交通費 | Transportation | `tag-transport` |
-| 貯金 | Savings (inflow) | `tag-savings` |
+| 食費 | Food (incl. eating out) | `tag-shokuhi` |
+| 交通費 | Transportation | `tag-kotsu` |
+| 貯金 | Savings (inflow) | `tag-chokin` |
+| NISA | NISA investment (inflow) | `tag-nisa` |
 | JO1 | JO1 savings (inflow) | `tag-jo1` |
-| その他 | Other | `tag-other` |
-| 貯金使用 | Savings usage (withdrawal) | `tag-savings-use` |
+| その他 | Other | `tag-sonota` |
+| 貯金使用 | Savings usage (withdrawal) | `tag-chokin-use` |
+| NISA使用 | NISA usage (withdrawal) | `tag-nisa-use` |
 | JO1使用 | JO1 usage (withdrawal) | `tag-jo1-use` |
 
-`貯金使用` and `JO1使用` are excluded from cash expense totals in `recalc()`.
+`貯金使用`, `NISA使用` and `JO1使用` are excluded from cash expense totals in `recalc()`.
+
+**Removed category**: `外食` (eating out) was merged into `食費`. `migrateGaishoku()` runs on load and in `renderAll()` to convert any remaining `外食` entries (from old localStorage, cloud sync, or backup files) to `食費`. Do not reintroduce `外食` as a category.
 
 ---
 
@@ -286,3 +289,4 @@ The app is served as static files. After merging to `master`, deploy by copying 
 - **Do not remove the `cache-version` meta tag** — it is used by the pull-to-refresh mechanism
 - **Do not use `document.querySelector` patterns that rely on class ordering** — prefer IDs for element access
 - **Do not use `async/await` beyond the existing sync functions** — keep the codebase consistent with existing patterns
+- **Do not commit a `.claude/` directory** — the GitHub Pages deployment fails ("Deployment failed, try again later.") when the repository contains one (confirmed 2026-07)
