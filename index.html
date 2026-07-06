@@ -661,9 +661,9 @@
 
   <div style="display:flex;gap:10px;flex-shrink:0;">
     <div class="settings-section" style="flex:1;min-width:0;">
-      <div class="field-label">1日の食費</div>
+      <div class="field-label">1日の食費（直近1週間平均）</div>
       <div class="field-row">
-        <div class="field-input-wrap"><input class="field-input" type="text" id="daily-food-input" placeholder="0" inputmode="tel" oninput="formatSettingInput(this);saveSettings();recalc()"><span class="field-unit-inside">円</span></div>
+        <div class="field-input-wrap"><input class="field-input" type="text" id="daily-food-input" placeholder="0" readonly tabindex="-1"><span class="field-unit-inside">円</span></div>
       </div>
     </div>
   </div>
@@ -1192,6 +1192,35 @@ function countRemainingWeekdays(year, month) {
   return weekdays.filter(d => d > startThreshold && d < lastWorkday).length;
 }
 
+// ===== 直近1週間の食費平均 =====
+// 今日を含む直近7日間の食費カテゴリ支出の合計を7で割った平均（円/日）
+function getDailyFoodAverage() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(start.getDate() - 6);
+  const fmt = dt => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  const fromStr = fmt(start);
+  const toStr = fmt(today);
+  // 対象期間は最大2ヶ月にまたがる
+  const keys = new Set([fromStr.slice(0, 7), toStr.slice(0, 7)]);
+  let sum = 0;
+  keys.forEach(k => {
+    const year = k.slice(0, 4);
+    const exps = (state.data[k] && state.data[k].expenses) || [];
+    exps.forEach(e => {
+      if (e.category !== '食費' || !e.date) return;
+      // 支出日付は "M/D" 形式（年は月バケットのキーから補完）
+      const md = String(e.date).match(/^(\d{1,2})\/(\d{1,2})$/);
+      const dateStr = md
+        ? `${year}-${md[1].padStart(2, '0')}-${md[2].padStart(2, '0')}`
+        : String(e.date);
+      if (dateStr >= fromStr && dateStr <= toStr) sum += e.amount;
+    });
+  });
+  return Math.max(0, Math.round(sum / 7));
+}
+
 // ===== RECALC =====
 function recalc() {
   const d = getCurrentData();
@@ -1207,7 +1236,8 @@ function recalc() {
   const holdings = incomeVal - totalExpenses;
 
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
-  const dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
+  const dailyFood = getDailyFoodAverage();
+  document.getElementById('daily-food-input').value = dailyFood.toLocaleString();
   // 食費マイナス分を食費予算から差し引く（所持金・残高にも反映）
   const foodDiscount = allExpenses.filter(e => e.category === '食費' && e.amount < 0).reduce((s, e) => s + e.amount, 0);
   const computedFoodBudget = Math.max(0, dailyFood * weekdays + foodDiscount);
@@ -1249,7 +1279,6 @@ function renderAll() {
   renderMonthHeader();
   const d = getCurrentData();
   document.getElementById('income-input').value = d.income ? Number(d.income).toLocaleString() : '';
-  document.getElementById('daily-food-input').value = state.settings.dailyFood || '';
   document.getElementById('savings-goal').value = state.settings.goal ? Number(state.settings.goal).toLocaleString() : '';
   document.getElementById('nisa-initial-input').value = state.settings.nisaInitial ? Number(state.settings.nisaInitial).toLocaleString() : '';
   document.getElementById('nisa-gain-input').value = state.settings.nisaGain ? Number(state.settings.nisaGain).toLocaleString() : '';
@@ -1536,7 +1565,7 @@ function renderTotalBar() {
 
   // 平日数・食費合計
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
-  const dailyFoodRate = parseFloat(document.getElementById('daily-food-input').value) || 0;
+  const dailyFoodRate = getDailyFoodAverage();
   // 当月の食費カテゴリのマイナス登録分を食費合計から差し引く（プラスは無視）
   const foodDiscount = allExpenses
     .filter(e => e.category === '食費' && e.amount < 0)
@@ -1601,7 +1630,7 @@ function saveFoodBudgetOverride() {
   const allExpenses = getAllExpenses();
   const foodDiscount = allExpenses.filter(e => e.category === '食費' && e.amount < 0).reduce((s, e) => s + e.amount, 0);
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
-  const computed = Math.max(0, (state.settings.dailyFood || 0) * weekdays + foodDiscount);
+  const computed = Math.max(0, getDailyFoodAverage() * weekdays + foodDiscount);
   const val = parseFloat(raw);
   if (!raw || isNaN(val)) {
     d.foodBudgetOverride = null;
@@ -1707,7 +1736,6 @@ function formatAccountBalanceInput(el) {
 
 // ===== SETTINGS =====
 function saveSettings() {
-  state.settings.dailyFood = parseFloat(document.getElementById('daily-food-input').value) || 0;
   state.settings.goal = parseFloat((document.getElementById('savings-goal').value||'').replace(/,/g,'')) || 0;
   state.settings.nisaInitial = parseFloat((document.getElementById('nisa-initial-input').value||'').replace(/,/g,'')) || 0;
   state.settings.nisaGain = parseFloat((document.getElementById('nisa-gain-input').value||'').replace(/,/g,'')) || 0;
@@ -2567,16 +2595,9 @@ function handleDefaultEnter(e) {
       if (id === 'income-input') { formatIncomeInput(e.target); recalc(); }
       else if (id === 'entry-amount' || id === 'default-amount') formatNumberInput(e.target);
       else if (id === 'savings-goal') { formatGoalInput(e.target); saveSettings(); renderSavings(); }
-      else if (id === 'daily-food-input') { e.target.value = e.target.value.replace(/[^0-9]/g, ''); saveSettings(); recalc(); }
     }
   });
 })();
-
-function formatSettingInput(el) {
-  if (el._imeActive) return;
-  const raw = el.value.replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
-  el.value = raw;
-}
 
 function toggleSign(id) {
   const el = document.getElementById(id);

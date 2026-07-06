@@ -93,7 +93,7 @@ state = {
       expenses: [
         {
           id: string,        // unique ID (Date.now() based)
-          date: 'YYYY-MM-DD',
+          date: 'M/D',       // e.g. '7/6' — no year, no zero padding; year comes from the month bucket key
           category: string,  // one of the 8 categories
           item: string,      // description
           amount: number     // can be negative (discounts)
@@ -110,7 +110,7 @@ state = {
     }
   },
   settings: {
-    dailyFood: 0,            // number — daily food budget
+    dailyFood: 0,            // number — legacy, no longer written/read: daily food is now auto-computed by getDailyFoodAverage() (last-7-days average of 食費 expenses)
     goal: 0,                 // number — monthly savings goal
     defaults: [
       {
@@ -184,7 +184,7 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 | Screen ID | Nav label | Function |
 |---|---|---|
 | `screen-top` | ホーム | Monthly expense tracking |
-| `screen-settings` | 設定 | Default entries, daily food budget, savings goal |
+| `screen-settings` | 設定 | Default entries, daily food average (read-only, last 7 days), savings goal |
 | `screen-savings` | 貯金 | Multi-year savings tracking table |
 | `screen-vacation` | 休業日 | Vacation/holiday date range management |
 | `screen-sync` | 同期 | Cloud sync (Google Sheets) and local backup |
@@ -203,7 +203,7 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 ### Input Handling
 - Numbers use full-to-half-width conversion: `str.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))`
 - Comma-formatted numbers are stripped before parsing: `.replace(/,/g, '')`
-- `formatNumberInput()`, `formatSettingInput()`, `formatGoalInput()`, `formatIncomeInput()` handle live formatting on `input` events
+- `formatNumberInput()`, `formatGoalInput()`, `formatIncomeInput()` handle live formatting on `input` events
 - IME composition is handled via `compositionstart`/`compositionend` — avoid triggering actions during Japanese input
 
 ### Default Entries vs. Monthly Expenses
