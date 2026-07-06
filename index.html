@@ -661,7 +661,7 @@
 
   <div style="display:flex;gap:10px;flex-shrink:0;">
     <div class="settings-section" style="flex:1;min-width:0;">
-      <div class="field-label">1日の食費（直近1週間平均）</div>
+      <div class="field-label">1日の食費（食費登録があった直近7日の平均）</div>
       <div class="field-row">
         <div class="field-input-wrap"><input class="field-input" type="text" id="daily-food-input" placeholder="0" readonly tabindex="-1"><span class="field-unit-inside">円</span></div>
       </div>
@@ -1192,20 +1192,14 @@ function countRemainingWeekdays(year, month) {
   return weekdays.filter(d => d > startThreshold && d < lastWorkday).length;
 }
 
-// ===== 直近1週間の食費平均 =====
-// 今日を含む直近7日間の食費カテゴリ支出の合計を7で割った平均（円/日）
+// ===== 食費登録があった直近7日分の平均 =====
+// 食費カテゴリの登録があった日（今日以前）のうち直近7日分について、
+// 日ごとの合計の平均（円/日）を返す。登録日が7日に満たない場合はある分だけで平均する。
 function getDailyFoodAverage() {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const start = new Date(today);
-  start.setDate(start.getDate() - 6);
-  const fmt = dt => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-  const fromStr = fmt(start);
-  const toStr = fmt(today);
-  // 対象期間は最大2ヶ月にまたがる
-  const keys = new Set([fromStr.slice(0, 7), toStr.slice(0, 7)]);
-  let sum = 0;
-  keys.forEach(k => {
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const byDate = {};
+  Object.keys(state.data).forEach(k => {
     const year = k.slice(0, 4);
     const exps = (state.data[k] && state.data[k].expenses) || [];
     exps.forEach(e => {
@@ -1215,10 +1209,14 @@ function getDailyFoodAverage() {
       const dateStr = md
         ? `${year}-${md[1].padStart(2, '0')}-${md[2].padStart(2, '0')}`
         : String(e.date);
-      if (dateStr >= fromStr && dateStr <= toStr) sum += e.amount;
+      if (dateStr > todayStr) return; // 未来日付は対象外
+      byDate[dateStr] = (byDate[dateStr] || 0) + e.amount;
     });
   });
-  return Math.max(0, Math.round(sum / 7));
+  const days = Object.keys(byDate).sort().slice(-7);
+  if (days.length === 0) return 0;
+  const sum = days.reduce((s, d) => s + byDate[d], 0);
+  return Math.max(0, Math.round(sum / days.length));
 }
 
 // ===== RECALC =====
