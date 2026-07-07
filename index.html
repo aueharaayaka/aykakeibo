@@ -657,7 +657,7 @@
 
   <div style="display:flex;gap:10px;flex-shrink:0;">
     <div class="settings-section" style="flex:1;min-width:0;">
-      <div class="field-label">1日の食費（食費登録があった直近7日の平均）</div>
+      <div class="field-label">1日の食費（今月の実費平均）</div>
       <div class="field-row">
         <div class="field-input-wrap"><input class="field-input" type="text" id="daily-food-input" placeholder="0" readonly tabindex="-1"><span class="field-unit-inside">円</span></div>
       </div>
@@ -1205,31 +1205,30 @@ function countRemainingWeekdays(year, month) {
   return weekdays.filter(d => d > startThreshold && d < lastWorkday).length;
 }
 
-// ===== 食費登録があった直近7日分の平均 =====
-// 食費カテゴリの登録があった日（今日以前）のうち直近7日分について、
-// 日ごとの合計の平均（円/日）を返す。登録日が7日に満たない場合はある分だけで平均する。
-function getDailyFoodAverage() {
+// ===== 月ごとの食費自動計算 =====
+// 月初〜今日は実費（その月に登録された食費の合計）、明日〜月末は
+// 「実費 ÷ 経過日数」の1日平均で予測し、実費＋予測を食費合計とする。
+// 過去月は実費のみ（予測なし）。未来月は登録済みの実費のみ（予測の元データがないため）。
+function getMonthlyFoodStats(year, month) {
+  const key = monthKey(year, month);
+  const daysInMonth = new Date(year, month, 0).getDate();
   const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const byDate = {};
-  Object.keys(state.data).forEach(k => {
-    const year = k.slice(0, 4);
-    const exps = (state.data[k] && state.data[k].expenses) || [];
-    exps.forEach(e => {
-      if (e.category !== '食費' || !e.date) return;
-      // 支出日付は "M/D" 形式（年は月バケットのキーから補完）
-      const md = String(e.date).match(/^(\d{1,2})\/(\d{1,2})$/);
-      const dateStr = md
-        ? `${year}-${md[1].padStart(2, '0')}-${md[2].padStart(2, '0')}`
-        : String(e.date);
-      if (dateStr > todayStr) return; // 未来日付は対象外
-      byDate[dateStr] = (byDate[dateStr] || 0) + e.amount;
-    });
-  });
-  const days = Object.keys(byDate).sort().slice(-7);
-  if (days.length === 0) return 0;
-  const sum = days.reduce((s, d) => s + byDate[d], 0);
-  return Math.max(0, Math.round(sum / days.length));
+  today.setHours(0, 0, 0, 0);
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month - 1, daysInMonth);
+  let elapsed; // 実費対象の経過日数（今日を含む）
+  if (today >= monthEnd) elapsed = daysInMonth;   // 過去月
+  else if (today < monthStart) elapsed = 0;       // 未来月
+  else elapsed = today.getDate();                 // 当月
+  const actual = ((state.data[key] || {}).expenses || [])
+    .filter(e => e.category === '食費')
+    .reduce((s, e) => s + e.amount, 0);
+  const avg = elapsed > 0 ? actual / elapsed : 0;
+  const forecast = avg * (daysInMonth - elapsed);
+  return {
+    avg: Math.max(0, Math.round(avg)),
+    total: Math.max(0, Math.round(actual + forecast))
+  };
 }
 
 // ===== RECALC =====
@@ -1246,12 +1245,12 @@ function recalc() {
   const totalExpenses = cashExpenses.reduce((s, e) => s + e.amount, 0);
   const holdings = incomeVal - totalExpenses;
 
-  const weekdays = countWeekdays(state.currentYear, state.currentMonth);
-  const dailyFood = getDailyFoodAverage();
-  document.getElementById('daily-food-input').value = dailyFood.toLocaleString();
-  // 食費マイナス分を食費予算から差し引く（所持金・残高にも反映）
-  const foodDiscount = allExpenses.filter(e => e.category === '食費' && e.amount < 0).reduce((s, e) => s + e.amount, 0);
-  const computedFoodBudget = Math.max(0, dailyFood * weekdays + foodDiscount);
+  // 食費合計 = 月初〜今日の実費 + 明日〜月末の予測（実費の1日平均 × 残り日数）
+  const foodStats = getMonthlyFoodStats(state.currentYear, state.currentMonth);
+  const todayD = new Date();
+  document.getElementById('daily-food-input').value =
+    getMonthlyFoodStats(todayD.getFullYear(), todayD.getMonth() + 1).avg.toLocaleString();
+  const computedFoodBudget = foodStats.total;
   const effectiveFoodBudget = (d.foodBudgetOverride != null) ? d.foodBudgetOverride : computedFoodBudget;
   const nonFoodExpenses = cashExpenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
   const balance = incomeVal - (nonFoodExpenses + effectiveFoodBudget);
@@ -1575,14 +1574,9 @@ function renderTotalBar() {
   }
   document.getElementById('total-amount').textContent = total.toLocaleString();
 
-  // 平日数・食費合計
+  // 平日数・食費合計（食費合計 = 月初〜今日の実費 + 明日〜月末の予測）
   const weekdays = countWeekdays(state.currentYear, state.currentMonth);
-  const dailyFoodRate = getDailyFoodAverage();
-  // 当月の食費カテゴリのマイナス登録分を食費合計から差し引く（プラスは無視）
-  const foodDiscount = allExpenses
-    .filter(e => e.category === '食費' && e.amount < 0)
-    .reduce((s, e) => s + e.amount, 0);
-  const computedFood = Math.max(0, dailyFoodRate * weekdays + foodDiscount);
+  const computedFood = getMonthlyFoodStats(state.currentYear, state.currentMonth).total;
   const d_tb = getCurrentData();
   const foodTotal = (d_tb.foodBudgetOverride != null) ? d_tb.foodBudgetOverride : computedFood;
   document.getElementById('food-total').value = foodTotal.toLocaleString();
@@ -1639,10 +1633,7 @@ function saveFoodBudgetOverride() {
   const el = document.getElementById('food-total');
   const raw = (el.value || '').replace(/,/g, '');
   const d = getCurrentData();
-  const allExpenses = getAllExpenses();
-  const foodDiscount = allExpenses.filter(e => e.category === '食費' && e.amount < 0).reduce((s, e) => s + e.amount, 0);
-  const weekdays = countWeekdays(state.currentYear, state.currentMonth);
-  const computed = Math.max(0, getDailyFoodAverage() * weekdays + foodDiscount);
+  const computed = getMonthlyFoodStats(state.currentYear, state.currentMonth).total;
   const val = parseFloat(raw);
   if (!raw || isNaN(val)) {
     d.foodBudgetOverride = null;
