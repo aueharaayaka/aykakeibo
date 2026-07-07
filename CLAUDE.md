@@ -110,7 +110,7 @@ state = {
     }
   },
   settings: {
-    dailyFood: 0,            // number — legacy, no longer written/read: daily food is now auto-computed by getDailyFoodAverage() (average of the last 7 days that have 食費 entries)
+    dailyFood: 0,            // number — legacy, no longer written/read: food totals are auto-computed by getMonthlyFoodStats() (month-to-date actual + forecast for remaining days at the month-to-date daily average)
     goal: 0,                 // number — monthly savings goal
     defaults: [
       {
@@ -187,7 +187,7 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 | Screen ID | Nav label | Function |
 |---|---|---|
 | `screen-top` | ホーム | Monthly expense tracking |
-| `screen-settings` | 設定 | Default entries, daily food average (read-only, last 7 days with 食費 entries), savings goal |
+| `screen-settings` | 設定 | Default entries, daily food average (read-only, current month's actual ÷ elapsed days), savings goal |
 | `screen-savings` | 貯金 | Multi-year savings tracking table |
 | `screen-vacation` | 休業日 | Vacation/holiday date range management |
 | `screen-sync` | 同期 | Cloud sync (Google Sheets) and local backup |
