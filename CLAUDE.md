@@ -221,6 +221,12 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 - `changeMonth()` enforces this lower bound
 - The upper bound is unlimited
 
+### Accounting Period (29日締め)
+- A month bucket `YYYY-MM` covers **the 29th of the previous calendar month through the 28th of that month** (e.g. `2026-07` = 6/29–7/28). Days 29–31 belong to the next month's bucket
+- `periodStart()`, `periodEnd()`, `bucketForDate()` define the period; `countWeekdays()`, `countRemainingWeekdays()` and `getMonthlyFoodStats()` all operate on the period, not the calendar month
+- `migrateBuckets()` runs on load and in `renderAll()` to move expenses dated 29–31 from their calendar-month bucket into the next bucket (idempotent; handles cloud/backup data too)
+- Expense `date` is always the real calendar date (`M/D`), so dates from the tail of the previous calendar month appear inside a bucket (e.g. `6/29` shown in the 7月 bucket)
+
 ### IDs
 - Expense IDs: `String(Date.now())` at creation time
 - Default entry IDs: `'def_' + Date.now()` or `'def_legacy_N'` for migrated old data
