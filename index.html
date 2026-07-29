@@ -1052,6 +1052,36 @@ function migrateGaishoku() {
   if (state.totalFilter === '外食') state.totalFilter = '食費';
 }
 
+// ===== 括り移行（29〜31日の支出を翌月の括りへ） =====
+// 「M月」の括りは前月29日〜当月28日。暦月バケットで保存された既存データのうち、
+// M月バケット内でM月29日以降の日付を持つ支出を翌月バケットへ移す（冪等）。
+function migrateBuckets() {
+  Object.keys(state.data || {}).forEach(k => {
+    const m = k.match(/^(\d{4})-(\d{2})$/);
+    if (!m) return;
+    const year = parseInt(m[1], 10);
+    const month = parseInt(m[2], 10);
+    const d = state.data[k];
+    if (!d || !d.expenses || d.expenses.length === 0) return;
+    const moved = [];
+    d.expenses = d.expenses.filter(e => {
+      const md = String(e.date || '').match(/^(\d{1,2})\/(\d{1,2})$/);
+      // バケットと同じ暦月かつ29日以降 → 翌月の括りへ
+      if (md && parseInt(md[1], 10) === month && parseInt(md[2], 10) >= 29) {
+        moved.push(e);
+        return false;
+      }
+      return true;
+    });
+    if (moved.length > 0) {
+      const nextKey = (month === 12) ? monthKey(year + 1, 1) : monthKey(year, month + 1);
+      if (!state.data[nextKey]) state.data[nextKey] = { income: 0, expenses: [], overrides: {} };
+      if (!state.data[nextKey].expenses) state.data[nextKey].expenses = [];
+      state.data[nextKey].expenses = [...moved, ...state.data[nextKey].expenses];
+    }
+  });
+}
+
 function loadData() {
   try {
     const s = localStorage.getItem('kakeibo_state');
@@ -1072,15 +1102,17 @@ function loadData() {
 loadCachedHolidays(); // キャッシュ済み祝日を同期的に反映
 loadData();
 migrateGaishoku();
+migrateBuckets();
 // 既存データにdefIdがない場合は補完、sinceがない場合は2026-03を設定
 (state.settings.defaults || []).forEach((e, i) => {
   if (!e.defId) e.defId = 'def_legacy_' + i;
   if (!e.since) e.since = '2026-03';
 });
 const today = new Date();
-// 常に今月を開く
-state.currentYear = today.getFullYear();
-state.currentMonth = today.getMonth() + 1;
+// 常に今日が属する括り（前月29日〜当月28日）を開く
+const initBucket = bucketForDate(today);
+state.currentYear = initBucket.year;
+state.currentMonth = initBucket.month;
 // 範囲外の場合はクランプ
 if (state.currentYear < 2026 || (state.currentYear === 2026 && state.currentMonth < 3)) {
   state.currentYear = 2026; state.currentMonth = 3;
@@ -1155,76 +1187,87 @@ function changeMonth(delta) {
   screen.classList.add(cls);
 }
 
+// ===== 集計期間（前月29日〜当月28日） =====
+// 「M月」の括りは (M-1)月29日〜M月28日。
+// 例：7月 = 6/29〜7/28。29日以降の日付は翌月の括りに入る。
+function periodStart(year, month) {
+  return new Date(year, month - 2, 29); // 前月29日（前月に29日がない場合は自動的に月初へ繰り上げ）
+}
+function periodEnd(year, month) {
+  return new Date(year, month - 1, 28); // 当月28日
+}
+// 日付が属する括り（年・月）を返す
+function bucketForDate(dt) {
+  const y = dt.getFullYear();
+  const m = dt.getMonth() + 1;
+  if (dt.getDate() >= 29) {
+    return m === 12 ? { year: y + 1, month: 1 } : { year: y, month: m + 1 };
+  }
+  return { year: y, month: m };
+}
+function dateKeyOf(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 // ===== WEEKDAY COUNT =====
 function isVacationDay(dateStr) {
   const vacations = state.settings.vacations || [];
   return vacations.some(v => v.from <= dateStr && dateStr <= v.to);
 }
 
-function countWeekdays(year, month) {
-  const days = new Date(year, month, 0).getDate();
-  let count = 0;
-  for (let d = 1; d <= days; d++) {
-    const dow = new Date(year, month - 1, d).getDay();
+// 括り期間（前月29日〜当月28日）内の平日（土日・祝日・休業日を除く）を列挙
+function listPeriodWeekdays(year, month) {
+  const end = periodEnd(year, month);
+  const weekdays = [];
+  for (let d = periodStart(year, month); d <= end; d.setDate(d.getDate() + 1)) {
+    const dow = d.getDay();
     if (dow === 0 || dow === 6) continue; // 土日除外
-    const key = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const key = dateKeyOf(d);
     if (JAPAN_HOLIDAYS.has(key)) continue; // 祝日除外
     if (isVacationDay(key)) continue; // 休業日除外
-    count++;
+    weekdays.push(new Date(d));
   }
-  return count;
+  return weekdays;
 }
 
-// 表示中の月の「月末までに残っている平日」を返す。
-// 今日も月の最終平日（=月末扱い）も含まず、その間の平日数を数える。
-// 過去月: 0。 未来月: その月の (平日数 - 1)。
+function countWeekdays(year, month) {
+  return listPeriodWeekdays(year, month).length;
+}
+
+// 表示中の括りの「期間末（28日側）までに残っている平日」を返す。
+// 今日も期間の最終平日（=月末扱い）も含まず、その間の平日数を数える。
+// 過去の括り: 0。 未来の括り: (平日数 - 1)。
 function countRemainingWeekdays(year, month) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const lastDay = new Date(year, month, 0).getDate();
-  const monthEnd = new Date(year, month - 1, lastDay);
-  monthEnd.setHours(0, 0, 0, 0);
-  if (today > monthEnd) return 0; // 過去月
+  if (today > periodEnd(year, month)) return 0; // 過去の括り
 
-  // 当月の平日（土日・祝日・休業日を除く）を列挙
-  const weekdays = [];
-  for (let d = 1; d <= lastDay; d++) {
-    const dow = new Date(year, month - 1, d).getDay();
-    if (dow === 0 || dow === 6) continue;
-    const key = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    if (JAPAN_HOLIDAYS.has(key)) continue;
-    if (isVacationDay(key)) continue;
-    weekdays.push(d);
-  }
+  const weekdays = listPeriodWeekdays(year, month);
   if (weekdays.length <= 1) return 0;
-
-  const lastWorkday = weekdays[weekdays.length - 1]; // 月の最終平日 = 月末扱い
-  const isCurrentMonth = today.getFullYear() === year && (today.getMonth() + 1) === month;
-  const startThreshold = isCurrentMonth ? today.getDate() : 0; // d > startThreshold
-
-  return weekdays.filter(d => d > startThreshold && d < lastWorkday).length;
+  const lastWorkday = weekdays[weekdays.length - 1]; // 期間の最終平日 = 月末扱い
+  return weekdays.filter(d => d > today && d < lastWorkday).length;
 }
 
 // ===== 月ごとの食費自動計算 =====
-// 月初〜今日は実費（その月に登録された食費の合計）、明日〜月末は
-// 「実費 ÷ 経過日数」の1日平均で予測し、実費＋予測を食費合計とする。
-// 過去月は実費のみ（予測なし）。未来月は登録済みの実費のみ（予測の元データがないため）。
+// 括り（前月29日〜当月28日）の開始〜今日は実費（その括りに登録された食費の合計）、
+// 明日〜期間末は「実費 ÷ 経過日数」の1日平均で予測し、実費＋予測を食費合計とする。
+// 過去の括りは実費のみ（予測なし）。未来の括りは登録済みの実費のみ（予測の元データがないため）。
 function getMonthlyFoodStats(year, month) {
   const key = monthKey(year, month);
-  const daysInMonth = new Date(year, month, 0).getDate();
+  const start = periodStart(year, month);
+  const end = periodEnd(year, month);
+  const daysInPeriod = Math.round((end - start) / 86400000) + 1;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const monthStart = new Date(year, month - 1, 1);
-  const monthEnd = new Date(year, month - 1, daysInMonth);
   let elapsed; // 実費対象の経過日数（今日を含む）
-  if (today >= monthEnd) elapsed = daysInMonth;   // 過去月
-  else if (today < monthStart) elapsed = 0;       // 未来月
-  else elapsed = today.getDate();                 // 当月
+  if (today >= end) elapsed = daysInPeriod;                        // 過去の括り
+  else if (today < start) elapsed = 0;                             // 未来の括り
+  else elapsed = Math.round((today - start) / 86400000) + 1;       // 当括り
   const actual = ((state.data[key] || {}).expenses || [])
     .filter(e => e.category === '食費')
     .reduce((s, e) => s + e.amount, 0);
   const avg = elapsed > 0 ? actual / elapsed : 0;
-  const forecast = avg * (daysInMonth - elapsed);
+  const forecast = avg * (daysInPeriod - elapsed);
   return {
     avg: Math.max(0, Math.round(avg)),
     total: Math.max(0, Math.round(actual + forecast))
@@ -1247,9 +1290,9 @@ function recalc() {
 
   // 食費合計 = 月初〜今日の実費 + 明日〜月末の予測（実費の1日平均 × 残り日数）
   const foodStats = getMonthlyFoodStats(state.currentYear, state.currentMonth);
-  const todayD = new Date();
+  const nowBucket = bucketForDate(new Date());
   document.getElementById('daily-food-input').value =
-    getMonthlyFoodStats(todayD.getFullYear(), todayD.getMonth() + 1).avg.toLocaleString();
+    getMonthlyFoodStats(nowBucket.year, nowBucket.month).avg.toLocaleString();
   const computedFoodBudget = foodStats.total;
   const effectiveFoodBudget = (d.foodBudgetOverride != null) ? d.foodBudgetOverride : computedFoodBudget;
   const nonFoodExpenses = cashExpenses.filter(e => e.category !== '食費').reduce((s, e) => s + e.amount, 0);
@@ -1287,6 +1330,7 @@ function recalc() {
 // ===== RENDER ALL =====
 function renderAll() {
   migrateGaishoku(); // 外食→食費の移行（クラウド・バックアップ由来のデータも通る）
+  migrateBuckets();  // 29〜31日の支出を翌月の括りへ移行
   renderMonthHeader();
   const d = getCurrentData();
   document.getElementById('income-input').value = d.income ? Number(d.income).toLocaleString() : '';
@@ -1303,16 +1347,16 @@ function renderAll() {
 
 function renderMonthHeader() {
   document.getElementById('month-num').textContent = `${state.currentYear}年${state.currentMonth}月`;
-  const now = new Date();
-  const isToday = state.currentYear === now.getFullYear() && state.currentMonth === now.getMonth() + 1;
+  const nowBucket = bucketForDate(new Date());
+  const isToday = state.currentYear === nowBucket.year && state.currentMonth === nowBucket.month;
   const btn = document.getElementById('back-to-today-btn');
   if (btn) btn.style.display = isToday ? 'none' : 'inline-block';
 }
 
 function goToToday() {
-  const now = new Date();
-  state.currentYear = now.getFullYear();
-  state.currentMonth = now.getMonth() + 1;
+  const nowBucket = bucketForDate(new Date());
+  state.currentYear = nowBucket.year;
+  state.currentMonth = nowBucket.month;
   saveData();
   renderAll();
   const screen = document.getElementById('screen-top');
@@ -1404,7 +1448,7 @@ function addExpense() {
 
   const d = getCurrentData();
   const now = new Date();
-  const date = `${state.currentMonth}/${now.getDate()}`;
+  const date = `${now.getMonth() + 1}/${now.getDate()}`; // 実際の今日の日付（括りと暦月がずれるため表示月ではなく実日付）
   d.expenses.push({ id: Date.now(), date, category: cat, item: item || '', amount });
   saveData();
 
@@ -1435,7 +1479,7 @@ function duplicateExpense(index) {
   const d = getCurrentData();
   const e = d.expenses[index];
   const now = new Date();
-  const date = `${state.currentMonth}/${now.getDate()}`;
+  const date = `${now.getMonth() + 1}/${now.getDate()}`; // 実際の今日の日付（括りと暦月がずれるため表示月ではなく実日付）
   d.expenses.push({ id: Date.now(), date, category: e.category, item: e.item, amount: e.amount });
   saveData();
   renderExpenseList();
@@ -1451,7 +1495,7 @@ function duplicateDefault(defId) {
   const effective = getEffectiveDefault(base, overrides);
   if (!effective) return;
   const now = new Date();
-  const date = `${state.currentMonth}/${now.getDate()}`;
+  const date = `${now.getMonth() + 1}/${now.getDate()}`; // 実際の今日の日付（括りと暦月がずれるため表示月ではなく実日付）
   d.expenses.push({ id: Date.now(), date, category: effective.category, item: effective.item, amount: effective.amount });
   saveData();
   renderExpenseList();
@@ -2029,7 +2073,8 @@ function renderDefaultList() {
 // ===== SAVINGS =====
 function renderSavings() {
   const todayDate = new Date();
-  const todayKey = monthKey(todayDate.getFullYear(), todayDate.getMonth() + 1);
+  const todayBucket = bucketForDate(todayDate);
+  const todayKey = monthKey(todayBucket.year, todayBucket.month);
   const nisaInitial = state.settings.nisaInitial || 0;
   const nisaGain = state.settings.nisaGain || 0;
 
