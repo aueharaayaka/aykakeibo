@@ -2273,7 +2273,7 @@ function showScreen(name) {
 }
 
 // ===== BACKUP / RESTORE =====
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwVZvsBH4NPWyOjmvW3KdEukwMWlXTG5Cf9kG3KFurGPAp1rVB73J1nnNWw92cYxp1D/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxF-Kdy-XhhE6fm2_zjrf1AfRr5u0i3dfFkGvGsPQLM5LL9DHdNTN0DzNScKXz9BtP3ew/exec';
 fetch(GAS_URL + '?ping=1').catch(() => {}); // GASインスタンスをウォームアップ
 
 // ===== AUTO-SYNC HELPERS =====
@@ -2370,7 +2370,12 @@ async function fetchCloudOnce() {
     try {
       const res = await fetch(GAS_URL + '?t=' + Date.now());
       const text = await res.text();
-      return parseCloudEnvelope(text);
+      // 空のクラウド（新規バックエンドの初期状態）は「接続できたがデータなし」として
+      // 接続失敗と区別する（初回アップロードのきっかけになる）
+      if (!text || text.trim() === '{}') return { payload: null, updatedAt: 0, empty: true };
+      const parsed = parseCloudEnvelope(text);
+      if (!parsed) throw new Error('invalid cloud response'); // 404ページ等はリトライ→接続失敗扱い
+      return parsed;
     } catch(e) {
       if (attempt < 2) await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
     }
@@ -2390,6 +2395,18 @@ async function startupCloudSync(reason) {
     loadingShown = true;
     updateAutoSyncStatus('クラウドを確認中...');
     const cloud = await fetchCloudOnce();
+    if (cloud && cloud.empty) {
+      // クラウドが空（新しいバックエンド）→ ローカルデータを初回アップロードして初期化
+      cloudSyncedOnce = true;
+      freshCacheLoad = false;
+      if (stateHasMeaningfulData(state)) {
+        setTimeout(() => uploadNow('startup-empty-cloud'), 0);
+        updateAutoSyncStatus('クラウドへ初回保存中...');
+      } else {
+        updateAutoSyncStatus('同期済み ' + nowHHMM());
+      }
+      return;
+    }
     if (!cloud || !cloud.payload) {
       updateAutoSyncStatus('クラウド未接続（後で再試行）');
       return;
@@ -2568,10 +2585,10 @@ async function syncDownload() {
     state = { ...state, ...cloud.payload };
     state.settings = { ...(state.settings || {}), autoSync: settingsAuto };
     state.meta = { updatedAt: cloud.updatedAt || Date.now() };
-    // 読み込み後は今月を開く
-    const now = new Date();
-    state.currentYear = now.getFullYear();
-    state.currentMonth = now.getMonth() + 1;
+    // 読み込み後は今日が属する括りを開く
+    const nowBucket = bucketForDate(new Date());
+    state.currentYear = nowBucket.year;
+    state.currentMonth = nowBucket.month;
     if (state.currentYear < 2026 || (state.currentYear === 2026 && state.currentMonth < 3)) {
       state.currentYear = 2026; state.currentMonth = 3;
     }
