@@ -110,7 +110,7 @@ state = {
     }
   },
   settings: {
-    dailyFood: 0,            // number — legacy, no longer written/read: food totals are auto-computed by getMonthlyFoodStats() (month-to-date actual + forecast for remaining days at the month-to-date daily average)
+    dailyFood: 0,            // number — legacy, no longer written/read: the 食費 total is simply the sum of expenses in the 食費 category (no budget, forecast, or average)
     goal: 0,                 // number — monthly savings goal
     defaults: [
       {
@@ -187,7 +187,7 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 | Screen ID | Nav label | Function |
 |---|---|---|
 | `screen-top` | ホーム | Monthly expense tracking |
-| `screen-settings` | 設定 | Default entries, daily food average (read-only, current month's actual ÷ elapsed days), savings goal |
+| `screen-settings` | 設定 | Default entries, savings goal |
 | `screen-savings` | 貯金 | Multi-year savings tracking table |
 | `screen-vacation` | 休業日 | Vacation/holiday date range management |
 | `screen-sync` | 同期 | Cloud sync (Google Sheets) and local backup |
@@ -223,7 +223,7 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 
 ### Accounting Period (29日締め)
 - A month bucket `YYYY-MM` covers **the 29th of the previous calendar month through the 28th of that month** (e.g. `2026-07` = 6/29–7/28). Days 29–31 belong to the next month's bucket
-- `periodStart()`, `periodEnd()`, `bucketForDate()` define the period; `countWeekdays()`, `countRemainingWeekdays()` and `getMonthlyFoodStats()` all operate on the period, not the calendar month
+- `periodStart()`, `periodEnd()`, `bucketForDate()` define the period; `countWeekdays()` and `countRemainingWeekdays()` operate on the period, not the calendar month
 - `migrateBuckets()` runs on load and in `renderAll()` to move expenses dated 29–31 from their calendar-month bucket into the next bucket (idempotent; handles cloud/backup data too)
 - Expense `date` is always the real calendar date (`M/D`), so dates from the tail of the previous calendar month appear inside a bucket (e.g. `6/29` shown in the 7月 bucket)
 
