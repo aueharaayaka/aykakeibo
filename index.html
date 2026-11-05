@@ -1296,7 +1296,6 @@ function renderAll() {
   recalc();
   renderExpenseList();
   renderDefaultList();
-  renderDefaultTotal();
   renderVacationList();
   renderSavings();
 }
@@ -1547,7 +1546,6 @@ function saveEdit() {
   document.getElementById('edit-overlay').classList.remove('show');
   editTarget = null;
   renderDefaultList();
-  renderDefaultTotal();
   renderExpenseList();
   recalc();
   renderSavings();
@@ -1993,6 +1991,7 @@ function renderDefaultTotal() {
 function renderDefaultList() {
   const defaults = state.settings.defaults || [];
   const list = document.getElementById('default-list');
+  renderDefaultTotal();
   if (defaults.length === 0) {
     list.innerHTML = '<div class="empty-state">デフォルト支出がありません</div>';
     return;
