@@ -1734,8 +1734,9 @@ function deletePlannedExpense(id) {
 function togglePlannedCheck(id) {
   const d = getCurrentData();
   if (!d.checkedPlanned) d.checkedPlanned = {};
-  d.checkedPlanned[id] = !d.checkedPlanned[id];
-  if (!d.checkedPlanned[id]) delete d.checkedPlanned[id];
+  // チェックした日（'YYYY-MM-DD'）を記録し、日別カレンダーではその日の支出として数える
+  if (d.checkedPlanned[id]) delete d.checkedPlanned[id];
+  else d.checkedPlanned[id] = dateKeyOf(new Date());
   saveData();
   renderExpenseList();
   recalc();
@@ -2255,8 +2256,8 @@ function switchSavingsTab(idx) {
 })();
 
 // ===== DAILY (日別カレンダー) =====
-// 対象は日付のある通常支出のうち 食費・交通費・その他。
-// 毎月のデフォルト・予定支出（日付なし）、貯金・NISA・JO1（積立）と各「使用」は日々の支出ではないので除外。
+// 対象は 食費・交通費・その他 の通常支出（登録日）と予定支出（チェックを入れた日）。
+// 毎月のデフォルト（日付なし）、貯金・NISA・JO1（積立）と各「使用」は日々の支出ではないので除外。
 var DAILY_START_KEY = '2026-11'; // 11月の括り（10/29〜）から集計
 var dailySelected = null; // 選択中の日（'YYYY-MM-DD'）
 
@@ -2308,6 +2309,20 @@ function renderDaily() {
     byDay[k].total += e.amount;
     byDay[k].items.push(e);
   });
+  // 予定支出：チェックを入れた日に計上（チェック日が表示中の期間に入るものを全月から集める）
+  const startKey = dateKeyOf(start), endKey = dateKeyOf(end);
+  Object.keys(state.data).forEach(mk => {
+    const md = state.data[mk];
+    const checked = md.checkedPlanned || {};
+    (md.plannedExpenses || []).forEach(e => {
+      const k = checked[e.id];
+      if (typeof k !== 'string' || k < startKey || k > endKey) return; // 日付のない古いチェックは対象外
+      if (!isDailyExpense(e)) return;
+      if (!byDay[k]) byDay[k] = { total: 0, items: [] };
+      byDay[k].total += e.amount;
+      byDay[k].items.push(Object.assign({ planned: true }, e));
+    });
+  });
 
   // 今日の支出・1日平均（今日時点。過去の括りは期間全体、未来の括りは表示なし）
   const isCurrent = today >= start && today <= end;
@@ -2358,6 +2373,7 @@ function renderDaily() {
   const title = `${+sp[1]}/${+sp[2]}（${dows[selDate.getDay()]}）`;
   const rows = sel ? sel.items.map(e => `
     <div class="expense-row">
+      ${e.planned ? '<span class="row-date" style="font-size:10px;color:#ccc;">予定</span>' : ''}
       <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
       <span class="row-item">${e.item || ''}</span>
       <span class="row-amount">${e.amount.toLocaleString()}円</span>
