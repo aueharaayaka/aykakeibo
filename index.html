@@ -182,7 +182,7 @@
     box-shadow: var(--shadow); margin-bottom: 12px;
   }
   .expense-table.scrollable {
-    max-height: 220px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   .expense-table.setting-list {
     max-height: none;
@@ -287,6 +287,28 @@
   }
   .settings-section { margin-bottom: 20px; }
   .settings-label { font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
+
+  /* ===== DAILY SCREEN ===== */
+  .daily-summary { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .daily-summary .total-bar { padding:8px 12px; }
+  .daily-summary .total-label { font-size:12px; }
+  .daily-summary .daily-val { flex:1; text-align:right; font-size:16px; font-weight:700; color:var(--pink-main); }
+  .dcal { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:10px 8px; margin-bottom:12px; }
+  .dcal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .dcal-dow { text-align:center; font-size:11px; font-weight:700; color:#aaa; padding:2px 0 4px; }
+  .dcal-dow.sun { color:var(--pink-dark); }
+  .dcal-dow.sat { color:#5a7ad4; }
+  .dcal-day { min-height:50px; padding:4px 1px; border-radius:8px; text-align:center; cursor:pointer; background:var(--pink-light); border:2px solid transparent; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .dcal-day.blank { background:transparent; cursor:default; }
+  .dcal-day .dnum { font-size:12px; font-weight:700; color:var(--text-body); }
+  .dcal-day.sun .dnum, .dcal-day.holiday .dnum { color:var(--pink-dark); }
+  .dcal-day.sat .dnum { color:#5a7ad4; }
+  .dcal-day .damt { font-size:10px; font-weight:700; color:var(--pink-main); letter-spacing:-0.3px; }
+  .dcal-day.future { opacity:0.45; }
+  .dcal-day.today { border-color:var(--pink-main); }
+  .dcal-day.selected { background:var(--pink-main); }
+  .dcal-day.selected .dnum, .dcal-day.selected .damt { color:var(--white); }
+  .daily-detail-title { font-size:13px; font-weight:700; color:var(--text-dark); margin:0 0 6px 2px; display:flex; justify-content:space-between; }
 
   /* ===== SAVINGS SCREEN ===== */
   .savings-title {
@@ -579,19 +601,6 @@
 
   <div style="display:flex;gap:8px;margin-bottom:8px;">
     <div class="total-bar" style="flex:1;min-width:0;padding:6px 12px;">
-      <span class="total-label" style="font-size:12px;">今日の支出</span>
-      <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="daily-total">0</span>
-      <span class="total-unit" style="font-size:12px;">円</span>
-    </div>
-    <div class="total-bar" style="flex:1;min-width:0;padding:6px 12px;">
-      <span class="total-label" style="font-size:12px;">1日平均</span>
-      <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="daily-average">0</span>
-      <span class="total-unit" style="font-size:12px;">円</span>
-    </div>
-  </div>
-
-  <div style="display:flex;gap:8px;margin-bottom:8px;">
-    <div class="total-bar" style="flex:1;min-width:0;padding:6px 12px;">
       <span class="total-label" style="font-size:12px;" id="food-label">食費</span>
       <input type="text" id="food-total" value="0" readonly tabindex="-1"
         style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);border:none;background:transparent;outline:none;padding:0;min-width:0;font-family:'LINESeedJP',sans-serif;">
@@ -772,6 +781,36 @@
 </div>
 
 <!-- BOTTOM NAV -->
+<!-- DAILY SCREEN -->
+<div id="screen-daily" class="screen">
+  <div class="month-header">
+    <button class="month-nav-btn" onclick="changeMonth(-1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="month-title" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+      <span class="month-num" id="daily-month-num">11月</span>
+      <span style="font-size:11px;color:var(--pink-mid);font-weight:700;" id="daily-period">10/29〜11/28</span>
+    </div>
+    <button class="month-nav-btn" onclick="changeMonth(1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+  <div class="daily-summary">
+    <div class="total-bar">
+      <span class="total-label">今日の支出</span>
+      <span class="daily-val" id="daily-today">0</span>
+      <span class="total-unit" style="font-size:12px;">円</span>
+    </div>
+    <div class="total-bar">
+      <span class="total-label">1日平均</span>
+      <span class="daily-val" id="daily-average">0</span>
+      <span class="total-unit" style="font-size:12px;">円</span>
+    </div>
+  </div>
+  <div class="dcal" id="daily-calendar"></div>
+  <div id="daily-detail"></div>
+</div>
+
 <!-- VACATION SCREEN -->
 <div id="screen-vacation" class="screen">
   <div class="settings-title" style="flex-shrink:0;">
@@ -789,6 +828,10 @@
   <button class="nav-btn active" id="nav-top" onclick="showScreen('top')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
     <span>ホーム</span>
+  </button>
+  <button class="nav-btn" id="nav-daily" onclick="showScreen('daily')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="10"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
+    <span>日別</span>
   </button>
   <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1181,8 +1224,8 @@ function changeMonth(delta) {
   state.currentMonth = m;
   saveData();
   renderAll();
-  // アニメーション：次月は右から、前月は左から
-  const screen = document.getElementById('screen-top');
+  // アニメーション：次月は右から、前月は左から（表示中の画面）
+  const screen = document.querySelector('.screen.active') || document.getElementById('screen-top');
   const cls = delta > 0 ? 'slide-in-right' : 'slide-in-left';
   screen.classList.remove('slide-in-right', 'slide-in-left');
   void screen.offsetWidth; // reflow
@@ -1311,6 +1354,7 @@ function renderAll() {
   renderDefaultList();
   renderVacationList();
   renderSavings();
+  renderDaily();
 }
 
 function renderMonthHeader() {
@@ -1592,7 +1636,6 @@ function renderTotalBar() {
   document.getElementById('food-label').textContent = '食費';
   document.getElementById('weekday-count').textContent = weekdays;
   document.getElementById('weekday-remaining').textContent = countRemainingWeekdays(state.currentYear, state.currentMonth);
-  renderDailyStats();
 
   // 貯金累計（表示月まで）
   let cumChokin = 0;
@@ -1615,55 +1658,6 @@ function renderTotalBar() {
     }
   }
   document.getElementById('home-savings-amount').textContent = cumChokin.toLocaleString();
-}
-
-// ===== DAILY STATS =====
-// 1日の支出・1日平均の対象は日付のある通常支出のみ（毎月のデフォルト・予定支出は日付がないので除外）。
-// 貯金・NISA・JO1（積立）と各「使用」は日々の支出ではないので除外。
-
-// 'M/D' を括り（year, month）の中の実日付に変換（括りの前月29〜31日は前月扱い）
-function expenseDateInBucket(dateStr, year, month) {
-  const parts = String(dateStr || '').split('/');
-  const m = parseInt(parts[0], 10), d = parseInt(parts[1], 10);
-  if (isNaN(m) || isNaN(d)) return null;
-  const y = (m === 12 && month === 1) ? year - 1 : year;
-  return new Date(y, m - 1, d);
-}
-
-function renderDailyStats() {
-  const startKey = '2026-11'; // 11月の括り（10/29〜）から集計
-  const exclude = ['貯金', 'NISA', 'JO1', '貯金使用', 'NISA使用', 'JO1使用'];
-  const dailyEl = document.getElementById('daily-total');
-  const avgEl = document.getElementById('daily-average');
-  const year = state.currentYear, month = state.currentMonth;
-  const key = monthKey(year, month);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const start = periodStart(year, month);
-  const end = periodEnd(year, month);
-
-  // 11月より前の括り・まだ始まっていない括りは表示しない
-  if (key < startKey || today < start) {
-    dailyEl.textContent = '-';
-    avgEl.textContent = '-';
-    return;
-  }
-
-  const isCurrent = today <= end;
-  const lastDay = isCurrent ? today : end; // 平均は「今日まで」（過去の括りは期間末まで）
-  const elapsedDays = Math.round((lastDay - start) / 86400000) + 1;
-
-  let todayTotal = 0, periodTotal = 0;
-  (getCurrentData().expenses || []).forEach(e => {
-    if (exclude.includes(e.category)) return;
-    const dt = expenseDateInBucket(e.date, year, month);
-    if (!dt || dt > lastDay) return;
-    periodTotal += e.amount;
-    if (dt.getTime() === today.getTime()) todayTotal += e.amount;
-  });
-
-  dailyEl.textContent = isCurrent ? todayTotal.toLocaleString() : '-';
-  avgEl.textContent = Math.round(periodTotal / elapsedDays).toLocaleString();
 }
 
 // ===== FILTER SHEET =====
@@ -2260,6 +2254,122 @@ function switchSavingsTab(idx) {
   }, { passive: true });
 })();
 
+// ===== DAILY (日別カレンダー) =====
+// 対象は日付のある通常支出のうち 食費・交通費・その他。
+// 毎月のデフォルト・予定支出（日付なし）、貯金・NISA・JO1（積立）と各「使用」は日々の支出ではないので除外。
+var DAILY_START_KEY = '2026-11'; // 11月の括り（10/29〜）から集計
+var dailySelected = null; // 選択中の日（'YYYY-MM-DD'）
+
+function isDailyExpense(e) {
+  return e.category === '食費' || e.category === '交通費' || e.category === 'その他';
+}
+
+// 'M/D' を括り（year, month）の中の実日付に変換（1月の括りの12/29〜31は前年）
+function expenseDateInBucket(dateStr, year, month) {
+  const parts = String(dateStr || '').split('/');
+  const m = parseInt(parts[0], 10), d = parseInt(parts[1], 10);
+  if (isNaN(m) || isNaN(d)) return null;
+  const y = (m === 12 && month === 1) ? year - 1 : year;
+  return new Date(y, m - 1, d);
+}
+
+function renderDaily() {
+  const year = state.currentYear, month = state.currentMonth;
+  const key = monthKey(year, month);
+  const start = periodStart(year, month);
+  const end = periodEnd(year, month);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayKey = dateKeyOf(today);
+
+  document.getElementById('daily-month-num').textContent = `${year}年${month}月`;
+  document.getElementById('daily-period').textContent = `${start.getMonth() + 1}/${start.getDate()}〜${end.getMonth() + 1}/${end.getDate()}`;
+  const todayEl = document.getElementById('daily-today');
+  const avgEl = document.getElementById('daily-average');
+  const cal = document.getElementById('daily-calendar');
+  const detail = document.getElementById('daily-detail');
+
+  if (key < DAILY_START_KEY) {
+    todayEl.textContent = '-';
+    avgEl.textContent = '-';
+    cal.innerHTML = '<div class="empty-state">2026年11月から表示されます</div>';
+    detail.innerHTML = '';
+    return;
+  }
+
+  // 日ごとの合計と明細
+  const byDay = {};
+  (getCurrentData().expenses || []).forEach(e => {
+    if (!isDailyExpense(e)) return;
+    const dt = expenseDateInBucket(e.date, year, month);
+    if (!dt) return;
+    const k = dateKeyOf(dt);
+    if (!byDay[k]) byDay[k] = { total: 0, items: [] };
+    byDay[k].total += e.amount;
+    byDay[k].items.push(e);
+  });
+
+  // 今日の支出・1日平均（今日時点。過去の括りは期間全体、未来の括りは表示なし）
+  const isCurrent = today >= start && today <= end;
+  if (today < start) {
+    todayEl.textContent = '-';
+    avgEl.textContent = '-';
+  } else {
+    const lastDay = isCurrent ? today : end;
+    const elapsedDays = Math.round((lastDay - start) / 86400000) + 1;
+    let sum = 0;
+    Object.keys(byDay).forEach(k => { if (k <= dateKeyOf(lastDay)) sum += byDay[k].total; });
+    todayEl.textContent = isCurrent ? (byDay[todayKey] ? byDay[todayKey].total : 0).toLocaleString() : '-';
+    avgEl.textContent = Math.round(sum / elapsedDays).toLocaleString();
+  }
+
+  // 選択日：未選択なら今日（期間内のとき）
+  if (!dailySelected || dailySelected < dateKeyOf(start) || dailySelected > dateKeyOf(end)) {
+    dailySelected = isCurrent ? todayKey : null;
+  }
+
+  // カレンダー（日曜始まり）
+  const dows = ['日', '月', '火', '水', '木', '金', '土'];
+  let html = '<div class="dcal-grid">';
+  html += dows.map((w, i) => `<div class="dcal-dow${i === 0 ? ' sun' : i === 6 ? ' sat' : ''}">${w}</div>`).join('');
+  for (let i = 0; i < start.getDay(); i++) html += '<div class="dcal-day blank"></div>';
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const k = dateKeyOf(d);
+    const dow = d.getDay();
+    const cls = ['dcal-day'];
+    if (dow === 0) cls.push('sun');
+    if (dow === 6) cls.push('sat');
+    if (JAPAN_HOLIDAYS.has(k)) cls.push('holiday');
+    if (d > today) cls.push('future');
+    if (k === todayKey) cls.push('today');
+    if (k === dailySelected) cls.push('selected');
+    const label = (d.getDate() === 1 || d.getTime() === start.getTime()) ? `${d.getMonth() + 1}/${d.getDate()}` : d.getDate();
+    const amt = byDay[k] ? byDay[k].total.toLocaleString() : '';
+    html += `<div class="${cls.join(' ')}" onclick="selectDailyDay('${k}')"><span class="dnum">${label}</span><span class="damt">${amt}</span></div>`;
+  }
+  html += '</div>';
+  cal.innerHTML = html;
+
+  // 選択日の明細
+  if (!dailySelected) { detail.innerHTML = ''; return; }
+  const sel = byDay[dailySelected];
+  const sp = dailySelected.split('-');
+  const selDate = new Date(+sp[0], +sp[1] - 1, +sp[2]);
+  const title = `${+sp[1]}/${+sp[2]}（${dows[selDate.getDay()]}）`;
+  const rows = sel ? sel.items.map(e => `
+    <div class="expense-row">
+      <span class="row-tag ${tagClass(e.category)}">${e.category}</span>
+      <span class="row-item">${e.item || ''}</span>
+      <span class="row-amount">${e.amount.toLocaleString()}円</span>
+    </div>`).join('') : '<div class="empty-state">支出がありません</div>';
+  detail.innerHTML = `<div class="daily-detail-title"><span>${title}</span><span>${(sel ? sel.total : 0).toLocaleString()}円</span></div><div class="expense-table">${rows}</div>`;
+}
+
+function selectDailyDay(k) {
+  dailySelected = k;
+  renderDaily();
+}
+
 // ===== SCREEN NAV =====
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => {
@@ -2271,6 +2381,7 @@ function showScreen(name) {
   document.getElementById(`screen-${name}`).classList.add('active');
   document.getElementById(`nav-${name}`).classList.add('active');
   if (name === 'savings') renderSavings();
+  if (name === 'daily') { dailySelected = null; renderDaily(); }
 }
 
 // ===== BACKUP / RESTORE =====
@@ -2731,7 +2842,7 @@ function formatIncomeInput(el) {
 
 // ===== ナビバースワイプ =====
 (function() {
-  const TABS = ['top', 'settings', 'savings', 'vacation', 'backup'];
+  const TABS = ['top', 'daily', 'settings', 'savings', 'vacation', 'backup'];
   const THRESHOLD = 50;
   let navStartX = 0;
   const nav = document.querySelector('.bottom-nav');
