@@ -182,7 +182,7 @@
     box-shadow: var(--shadow); margin-bottom: 12px;
   }
   .expense-table.scrollable {
-    max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    max-height: 220px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   .expense-table.setting-list {
     max-height: none;
@@ -575,6 +575,19 @@
 
   <div class="expense-table scrollable" id="expense-list">
     <div class="empty-state">支出がありません</div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:8px;">
+    <div class="total-bar" style="flex:1;min-width:0;padding:6px 12px;">
+      <span class="total-label" style="font-size:12px;">今日の支出</span>
+      <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="daily-total">0</span>
+      <span class="total-unit" style="font-size:12px;">円</span>
+    </div>
+    <div class="total-bar" style="flex:1;min-width:0;padding:6px 12px;">
+      <span class="total-label" style="font-size:12px;">1日平均</span>
+      <span style="flex:1;text-align:right;font-size:15px;font-weight:700;color:var(--pink-main);" id="daily-average">0</span>
+      <span class="total-unit" style="font-size:12px;">円</span>
+    </div>
   </div>
 
   <div style="display:flex;gap:8px;margin-bottom:8px;">
@@ -1579,6 +1592,7 @@ function renderTotalBar() {
   document.getElementById('food-label').textContent = '食費';
   document.getElementById('weekday-count').textContent = weekdays;
   document.getElementById('weekday-remaining').textContent = countRemainingWeekdays(state.currentYear, state.currentMonth);
+  renderDailyStats();
 
   // 貯金累計（表示月まで）
   let cumChokin = 0;
@@ -1601,6 +1615,55 @@ function renderTotalBar() {
     }
   }
   document.getElementById('home-savings-amount').textContent = cumChokin.toLocaleString();
+}
+
+// ===== DAILY STATS =====
+// 1日の支出・1日平均の対象は日付のある通常支出のみ（毎月のデフォルト・予定支出は日付がないので除外）。
+// 貯金・NISA・JO1（積立）と各「使用」は日々の支出ではないので除外。
+
+// 'M/D' を括り（year, month）の中の実日付に変換（括りの前月29〜31日は前月扱い）
+function expenseDateInBucket(dateStr, year, month) {
+  const parts = String(dateStr || '').split('/');
+  const m = parseInt(parts[0], 10), d = parseInt(parts[1], 10);
+  if (isNaN(m) || isNaN(d)) return null;
+  const y = (m === 12 && month === 1) ? year - 1 : year;
+  return new Date(y, m - 1, d);
+}
+
+function renderDailyStats() {
+  const startKey = '2026-11'; // 11月の括り（10/29〜）から集計
+  const exclude = ['貯金', 'NISA', 'JO1', '貯金使用', 'NISA使用', 'JO1使用'];
+  const dailyEl = document.getElementById('daily-total');
+  const avgEl = document.getElementById('daily-average');
+  const year = state.currentYear, month = state.currentMonth;
+  const key = monthKey(year, month);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = periodStart(year, month);
+  const end = periodEnd(year, month);
+
+  // 11月より前の括り・まだ始まっていない括りは表示しない
+  if (key < startKey || today < start) {
+    dailyEl.textContent = '-';
+    avgEl.textContent = '-';
+    return;
+  }
+
+  const isCurrent = today <= end;
+  const lastDay = isCurrent ? today : end; // 平均は「今日まで」（過去の括りは期間末まで）
+  const elapsedDays = Math.round((lastDay - start) / 86400000) + 1;
+
+  let todayTotal = 0, periodTotal = 0;
+  (getCurrentData().expenses || []).forEach(e => {
+    if (exclude.includes(e.category)) return;
+    const dt = expenseDateInBucket(e.date, year, month);
+    if (!dt || dt > lastDay) return;
+    periodTotal += e.amount;
+    if (dt.getTime() === today.getTime()) todayTotal += e.amount;
+  });
+
+  dailyEl.textContent = isCurrent ? todayTotal.toLocaleString() : '-';
+  avgEl.textContent = Math.round(periodTotal / elapsedDays).toLocaleString();
 }
 
 // ===== FILTER SHEET =====
