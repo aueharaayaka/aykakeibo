@@ -174,6 +174,13 @@
     box-shadow: 0 3px 10px rgba(240,81,138,0.35);
   }
   .register-btn:active { transform: scale(0.95); }
+  .day-input {
+    flex: 0 0 40px; min-width: 0; padding: 9px 4px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--pink-border); background: var(--white);
+    font-family: 'LINESeedJP', sans-serif; font-size: 16px; color: var(--text-body);
+    text-align: center; box-shadow: var(--shadow);
+  }
+  .day-input:focus { outline: 2px solid var(--pink-main); border-color: transparent; }
   .sign-btn { flex: 0 0 auto; padding: 9px 8px; background: var(--white); color: var(--text-dark); font-family: 'LINESeedJP', sans-serif; font-size: 15px; font-weight: 700; border: 1.5px solid var(--pink-border); cursor: pointer; border-radius: var(--radius-sm); box-shadow: var(--shadow); }
 
   /* ===== TABLE ===== */
@@ -552,6 +559,7 @@
   </div>
 
   <div id="entry-form-expense" class="entry-form">
+    <input class="day-input" type="text" id="entry-day" placeholder="日" inputmode="numeric" maxlength="2" onkeydown="handleEntryEnter(event)">
     <div class="select-wrap">
       <select id="entry-category">
         <option value="">用途</option>
@@ -917,6 +925,11 @@
   <div class="dropdown-sheet">
     <h3 id="edit-sheet-title">支出を編集</h3>
     <div class="edit-form">
+      <div class="edit-form-row" id="edit-date-row" style="display:none;">
+        <span style="font-size:14px;font-weight:700;color:var(--text-dark);flex-shrink:0;">日付</span>
+        <input class="edit-text" type="text" id="edit-day" placeholder="日" inputmode="numeric" maxlength="2" style="flex:0 0 64px;text-align:center;">
+        <span style="font-size:12px;color:var(--pink-mid);" id="edit-date-hint"></span>
+      </div>
       <div class="edit-form-row">
         <select class="edit-select" id="edit-category">
           <option value="食費">食費</option>
@@ -1459,11 +1472,20 @@ function addExpense() {
   if (isNaN(amount)) { showToast('金額を入力してください'); return; }
 
   const d = getCurrentData();
-  const now = new Date();
-  const date = `${now.getMonth() + 1}/${now.getDate()}`; // 実際の今日の日付（括りと暦月がずれるため表示月ではなく実日付）
+  // 日付：入力がなければ今日の実日付。入力があれば表示中の月の括りの日付（29〜31日は前月）
+  const dayStr = document.getElementById('entry-day').value.trim();
+  let date;
+  if (dayStr) {
+    date = bucketDateStr(dayStr, state.currentYear, state.currentMonth);
+    if (!date) { showToast('日付が正しくありません'); return; }
+  } else {
+    const now = new Date();
+    date = `${now.getMonth() + 1}/${now.getDate()}`; // 実際の今日の日付（括りと暦月がずれるため表示月ではなく実日付）
+  }
   d.expenses.push({ id: Date.now(), date, category: cat, item: item || '', amount });
   saveData();
 
+  document.getElementById('entry-day').value = '';
   document.getElementById('entry-category').value = '';
   document.getElementById('entry-item').value = '';
   document.getElementById('entry-amount').value = '';
@@ -1526,12 +1548,30 @@ function deleteDefaultForMonth(defId) {
   renderSavings();
 }
 
+// ===== 日付入力 =====
+// 入力された「日」を表示中の括り（前月29日〜当月28日）の日付 'M/D' に変換。月は括りで固定。
+// 1〜28日 → 当月、29〜31日 → 前月（括りに含まれる側）。存在しない日・範囲外は null。
+function bucketDateStr(dayStr, year, month) {
+  const s = String(dayStr).replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).trim();
+  if (!/^\d{1,2}$/.test(s)) return null;
+  const day = parseInt(s, 10);
+  if (day < 1 || day > 31) return null;
+  const dt = day >= 29 ? new Date(year, month - 2, day) : new Date(year, month - 1, day);
+  if (dt.getDate() !== day) return null; // 2/30 など存在しない日
+  if (dt < periodStart(year, month) || dt > periodEnd(year, month)) return null;
+  return `${dt.getMonth() + 1}/${day}`;
+}
+
 // ===== EDIT SHEET =====
 function openEditExpense(index) {
   const d = getCurrentData();
   const e = d.expenses[index];
   editTarget = { type: 'expense', index };
   document.getElementById('edit-sheet-title').textContent = '支出を編集';
+  const ps = periodStart(state.currentYear, state.currentMonth);
+  document.getElementById('edit-date-row').style.display = 'flex';
+  document.getElementById('edit-day').value = String(e.date || '').split('/')[1] || '';
+  document.getElementById('edit-date-hint').textContent = `${ps.getMonth() + 1}/${ps.getDate()}〜${state.currentMonth}/28（29〜31は${ps.getMonth() + 1}月）`;
   document.getElementById('edit-category').value = e.category;
   document.getElementById('edit-item').value = e.item;
   document.getElementById('edit-amount').value = e.amount;
@@ -1543,6 +1583,7 @@ function openEditPlanned(id) {
   const e = (d.plannedExpenses || []).find(e => e.id === id);
   if (!e) return;
   editTarget = { type: 'plannedExpense', id };
+  document.getElementById('edit-date-row').style.display = 'none';
   document.getElementById('edit-sheet-title').textContent = '予定支出を編集';
   document.getElementById('edit-category').value = e.category;
   document.getElementById('edit-item').value = e.item;
@@ -1553,6 +1594,7 @@ function openEditPlanned(id) {
 function openEditDefaultGlobal(index) {
   const e = state.settings.defaults[index];
   editTarget = { type: 'defaultGlobal', index };
+  document.getElementById('edit-date-row').style.display = 'none';
   document.getElementById('edit-sheet-title').textContent = 'デフォルト支出を編集（全月）';
   document.getElementById('edit-category').value = e.category;
   document.getElementById('edit-item').value = e.item;
@@ -1566,6 +1608,7 @@ function openEditDefault(defId) {
   const base = state.settings.defaults.find(e => e.defId === defId);
   const effective = getEffectiveDefault(base, overrides);
   editTarget = { type: 'default', defId };
+  document.getElementById('edit-date-row').style.display = 'none';
   document.getElementById('edit-sheet-title').textContent = '毎月の支出を編集（この月のみ）';
   document.getElementById('edit-category').value = effective.category;
   document.getElementById('edit-item').value = effective.item;
@@ -1582,6 +1625,12 @@ function saveEdit() {
   if (editTarget.type === 'expense') {
     const d = getCurrentData();
     const e = d.expenses[editTarget.index];
+    const dayStr = document.getElementById('edit-day').value.trim();
+    if (dayStr) {
+      const date = bucketDateStr(dayStr, state.currentYear, state.currentMonth);
+      if (!date) { showToast('日付が正しくありません'); return; }
+      e.date = date;
+    }
     e.category = cat;
     e.item = item || e.item;
     e.amount = amount;
