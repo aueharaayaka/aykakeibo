@@ -221,15 +221,15 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 - `changeMonth()` enforces this lower bound
 - The upper bound is unlimited
 
-### Accounting Period (29日締め)
-- A month bucket `YYYY-MM` covers **the 29th of the previous calendar month through the 28th of that month** (e.g. `2026-07` = 6/29–7/28). Days 29–31 belong to the next month's bucket
-- `periodStart()`, `periodEnd()`, `bucketForDate()` define the period; `countWeekdays()` and `countRemainingWeekdays()` operate on the period, not the calendar month
-- `migrateBuckets()` runs on load and in `renderAll()` to move expenses dated 29–31 from their calendar-month bucket into the next bucket (idempotent; handles cloud/backup data too)
-- Expense `date` is always the real calendar date (`M/D`), so dates from the tail of the previous calendar month appear inside a bucket (e.g. `6/29` shown in the 7月 bucket)
+### Accounting Period (calendar month)
+- A month bucket `YYYY-MM` covers **the 1st through the last day of that calendar month** (changed 2026-11; it used to be 29日締め = previous 29th–28th)
+- `periodStart()`, `periodEnd()`, `bucketForDate()` define the period; `countWeekdays()` and `countRemainingWeekdays()` operate on it
+- `migrateBuckets()` runs on load and in `renderAll()` to move expenses that the old 29日締め rule had pushed into the next bucket (dated the previous calendar month) back to their own month's bucket (idempotent; handles cloud/backup data too; never moves into months before 2026-03)
+- Expense `date` is the real calendar date (`M/D`)
 
 ### Dates on planned / default entries (日別カレンダー)
 - Day pickers are 1–31 `<select>`s filled by `fillDaySelect()`. The month is the **calendar month** (`calendarDate()`): e.g. 12月 + 31 = 12/31. Non-existent days (11/31) are rejected
-- Regular expenses are placed into the bucket their date belongs to via `placeExpense()` (29–31 → next bucket, 29日締め); editing an expense's date moves it between buckets
+- Regular expenses are placed into the bucket their date belongs to via `placeExpense()`; editing an expense's date moves it between buckets
 - Planned expense: optional `dateKey: 'YYYY-MM-DD'`
 - Default entry: optional `day` (global, on `settings.defaults[]`) or per-month `overrides[defId].day` (`null` = none); days past month-end are clamped (`defaultDayDate()`)
 - `checkedPlanned[id]` / `checkedDefaults[defId]` hold the check date `'YYYY-MM-DD'` (older data may hold `true`; treat as a truthy flag)
