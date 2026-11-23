@@ -2978,18 +2978,22 @@ function formatIncomeInput(el) {
 
 // ===== SWIPE =====
 (function() {
-  let startX = 0, startY = 0;
+  let startX = 0, startY = 0, fromNav = false;
   const THRESHOLD = 50;  // スワイプ判定の最小px
   const ANGLE = 30;      // 横方向と判定する角度
 
   document.addEventListener('touchstart', (e) => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
+    fromNav = !!e.target.closest('.bottom-nav'); // ナビ上のスワイプはタブ切り替え用
   }, { passive: true });
 
   document.addEventListener('touchend', (e) => {
-    // ホーム画面でのみ有効
-    if (!document.getElementById('screen-top').classList.contains('active')) return;
+    // ホーム画面・日別画面で有効
+    if (!document.getElementById('screen-top').classList.contains('active') &&
+        !document.getElementById('screen-daily').classList.contains('active')) return;
+    if (fromNav) return;
+    if (document.querySelector('.dropdown-overlay.show')) return; // シート表示中は無効
     const dx = e.changedTouches[0].clientX - startX;
     const dy = e.changedTouches[0].clientY - startY;
     if (Math.abs(dx) < THRESHOLD) return;
