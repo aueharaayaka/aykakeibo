@@ -227,6 +227,12 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 - `migrateBuckets()` runs on load and in `renderAll()` to move expenses dated 29–31 from their calendar-month bucket into the next bucket (idempotent; handles cloud/backup data too)
 - Expense `date` is always the real calendar date (`M/D`), so dates from the tail of the previous calendar month appear inside a bucket (e.g. `6/29` shown in the 7月 bucket)
 
+### Dates on planned / default entries (日別カレンダー)
+- Day pickers are 1–31 `<select>`s filled by `fillDaySelect()`; the month is fixed to the displayed bucket (`bucketDateStr()`: 1–28 → this month, 29–31 → previous month)
+- Planned expense: optional `dateKey: 'YYYY-MM-DD'`. Shown on the 日別 calendar whether checked or not; checking sets `dateKey` to the check date (unchecking keeps it)
+- Default entry: optional `day` (global, on `settings.defaults[]`) or per-month `overrides[defId].day` (`null` = none). Counted on the 日別 calendar only when checked; date = `day` in that bucket, else the check date
+- `checkedPlanned[id]` / `checkedDefaults[defId]` hold the check date `'YYYY-MM-DD'` (older data may hold `true`; treat as a truthy flag)
+
 ### IDs
 - Expense IDs: `String(Date.now())` at creation time
 - Default entry IDs: `'def_' + Date.now()` or `'def_legacy_N'` for migrated old data
