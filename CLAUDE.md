@@ -228,10 +228,12 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 - Expense `date` is always the real calendar date (`M/D`), so dates from the tail of the previous calendar month appear inside a bucket (e.g. `6/29` shown in the 7月 bucket)
 
 ### Dates on planned / default entries (日別カレンダー)
-- Day pickers are 1–31 `<select>`s filled by `fillDaySelect()`; the month is fixed to the displayed bucket (`bucketDateStr()`: 1–28 → this month, 29–31 → previous month)
-- Planned expense: optional `dateKey: 'YYYY-MM-DD'`. Shown on the 日別 calendar whether checked or not; checking sets `dateKey` to the check date (unchecking keeps it)
-- Default entry: optional `day` (global, on `settings.defaults[]`) or per-month `overrides[defId].day` (`null` = none). Counted on the 日別 calendar only when checked; date = `day` in that bucket, else the check date
+- Day pickers are 1–31 `<select>`s filled by `fillDaySelect()`. The month is the **calendar month** (`calendarDate()`): e.g. 12月 + 31 = 12/31. Non-existent days (11/31) are rejected
+- Regular expenses are placed into the bucket their date belongs to via `placeExpense()` (29–31 → next bucket, 29日締め); editing an expense's date moves it between buckets
+- Planned expense: optional `dateKey: 'YYYY-MM-DD'`
+- Default entry: optional `day` (global, on `settings.defaults[]`) or per-month `overrides[defId].day` (`null` = none); days past month-end are clamped (`defaultDayDate()`)
 - `checkedPlanned[id]` / `checkedDefaults[defId]` hold the check date `'YYYY-MM-DD'` (older data may hold `true`; treat as a truthy flag)
+- 日別 calendar (`plannedDayInfo()` / `defaultDayInfo()`): checked → counted on the check date (legacy `true` → the set date); unchecked with a date → shown pale as 予定 on that date and excluded from 今日の支出 / 1日平均
 
 ### IDs
 - Expense IDs: `String(Date.now())` at creation time
