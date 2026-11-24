@@ -223,7 +223,7 @@ Five screens, toggled by `showScreen(name)` which adds/removes the `.active` cla
 
 ### Accounting Period (calendar month)
 - A month bucket `YYYY-MM` covers **the 1st through the last day of that calendar month** (changed 2026-11; it used to be 29日締め = previous 29th–28th)
-- `periodStart()`, `periodEnd()`, `bucketForDate()` define the period; `countWeekdays()` and `countRemainingWeekdays()` operate on it
+- `periodStart()`, `periodEnd()`, `bucketForDate()` define the period; `countWeekdays()` (weekdays excl. weekends, holidays, vacations) and `countRemainingDays()` (all calendar days between today and month-end, both excluded) operate on it
 - `migrateBuckets()` runs on load and in `renderAll()` to move expenses that the old 29日締め rule had pushed into the next bucket (dated the previous calendar month) back to their own month's bucket (idempotent; handles cloud/backup data too; never moves into months before 2026-03)
 - Expense `date` is the real calendar date (`M/D`)
 
