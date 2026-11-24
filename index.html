@@ -1292,18 +1292,17 @@ function countWeekdays(year, month) {
   return listPeriodWeekdays(year, month).length;
 }
 
-// 表示中の月の「月末までに残っている平日」を返す。
-// 今日も期間の最終平日（=月末扱い）も含まず、その間の平日数を数える。
-// 過去の括り: 0。 未来の括り: (平日数 - 1)。
-function countRemainingWeekdays(year, month) {
+// 表示中の月の「月末までに残っている日数」を返す（土日・祝日・休業日も含む暦日）。
+// 今日も月末日も含まず、その間の日数を数える。
+// 過去の月: 0。 未来の月: (月の日数 - 1)。
+function countRemainingDays(year, month) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (today > periodEnd(year, month)) return 0; // 過去の括り
-
-  const weekdays = listPeriodWeekdays(year, month);
-  if (weekdays.length <= 1) return 0;
-  const lastWorkday = weekdays[weekdays.length - 1]; // 期間の最終平日 = 月末扱い
-  return weekdays.filter(d => d > today && d < lastWorkday).length;
+  const start = periodStart(year, month);
+  const end = periodEnd(year, month);
+  if (today >= end) return 0; // 過去の月・月末日当日
+  const from = today < start ? new Date(start.getTime() - 86400000) : today; // 未来の月は月初から数える
+  return Math.round((end - from) / 86400000) - 1;
 }
 
 // ===== RECALC =====
@@ -1760,7 +1759,7 @@ function renderTotalBar() {
   document.getElementById('food-total').value = foodTotal.toLocaleString();
   document.getElementById('food-label').textContent = '食費';
   document.getElementById('weekday-count').textContent = weekdays;
-  document.getElementById('weekday-remaining').textContent = countRemainingWeekdays(state.currentYear, state.currentMonth);
+  document.getElementById('weekday-remaining').textContent = countRemainingDays(state.currentYear, state.currentMonth);
 
   // 貯金累計（表示月まで）
   let cumChokin = 0;
