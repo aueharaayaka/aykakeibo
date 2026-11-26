@@ -96,7 +96,7 @@ state = {
           date: 'M/D',       // e.g. '7/6' — no year, no zero padding; year comes from the month bucket key
           category: string,  // one of the 9 categories
           item: string,      // description
-          amount: number     // can be negative (discounts)
+          amount: number     // can be negative (discounts); for 収入 it is the income amount
         }
       ],
       overrides: {
@@ -133,7 +133,7 @@ state = {
 
 ## Expense Categories
 
-There are exactly 9 categories. Do not add or remove them without updating `tagClass()`, all render functions, and the filter sheet:
+There are exactly 10 categories. Do not add or remove them without updating `tagClass()`, all render functions, and the filter sheet:
 
 | Category (Japanese) | Meaning | CSS tag class |
 |---|---|---|
@@ -146,8 +146,11 @@ There are exactly 9 categories. Do not add or remove them without updating `tagC
 | 貯金使用 | Savings usage (withdrawal) | `tag-chokin-use` |
 | NISA使用 | NISA usage (withdrawal) | `tag-nisa-use` |
 | JO1使用 | JO1 usage (withdrawal) | `tag-jo1-use` |
+| 収入 | Income (regular expenses only) | `tag-shunyu` |
 
 `貯金使用`, `NISA使用` and `JO1使用` are excluded from cash expense totals in `recalc()`.
+
+`収入` is selectable only for regular expenses (entry form and the expense edit sheet; hidden for planned/default edits via `setEditIncomeOption()`). Its amount is added to that month's `income` via `addToIncome()` when registered/duplicated/edited and subtracted when deleted/edited away, and it is excluded from all expense totals (所持金・残高・口座残高・合計「全体」). When 口座残高 was entered manually (`accountBalanceInit` set), `sumIncomeEntries()` is added to it.
 
 **Removed category**: `外食` (eating out) was merged into `食費`. `migrateGaishoku()` runs on load and in `renderAll()` to convert any remaining `外食` entries (from old localStorage, cloud sync, or backup files) to `食費`. Do not reintroduce `外食` as a category.
 
