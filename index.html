@@ -239,6 +239,7 @@
     .tag-sonota  { background: #f9d0de; color: #d4537a; }
   .tag-chokin-use { background: #ede0ff; color: #7a3ad4; border: 1.5px solid #c9a0f0; }
   .tag-jo1-use    { background: #ccd8ff; color: #3a50d4; border: 1.5px solid #99b0f0; }
+  .tag-shunyu     { background: #fff4c2; color: #b07a00; border: 1.5px solid #f0d060; }
   .tag-nisa       { background: #d8f5e8; color: #2a8a5a; }
   .tag-nisa-use   { background: #b8ead4; color: #1a6a42; border: 1.5px solid #7ad4aa; }
 
@@ -575,6 +576,7 @@
         <option value="貯金使用">貯金使用</option>
         <option value="NISA使用">NISA使用</option>
         <option value="JO1使用">JO1使用</option>
+        <option value="収入">収入</option>
       </select>
       <span class="select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0518a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
     </div>
@@ -944,6 +946,7 @@
           <option value="貯金使用">貯金使用</option>
           <option value="NISA使用">NISA使用</option>
           <option value="JO1使用">JO1使用</option>
+          <option value="収入" id="edit-cat-income">収入</option>
         </select>
       </div>
       <div class="edit-form-row">
@@ -1314,8 +1317,8 @@ function recalc() {
 
   const allExpenses = getAllExpenses();
   const plannedExpenses = d.plannedExpenses || [];
-  // 貯金使用・NISA使用・JO1使用は現金支出でないので所持金・残高から除外
-  const cashExpenses = [...allExpenses, ...plannedExpenses].filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用');
+  // 貯金使用・NISA使用・JO1使用は現金支出でないので所持金・残高から除外。収入は今月の収入に加算済みなので除外
+  const cashExpenses = [...allExpenses, ...plannedExpenses].filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用' && e.category !== '収入');
   const totalExpenses = cashExpenses.reduce((s, e) => s + e.amount, 0);
   const holdings = incomeVal - totalExpenses;
 
@@ -1339,10 +1342,12 @@ function recalc() {
     .filter(e => checkedPlanned[e.id])
     .reduce((s, e) => s + e.amount, 0);
   const nonDefaultExpenses = (d.expenses || [])
-    .filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用')
+    .filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用' && e.category !== '収入')
     .reduce((s, e) => s + e.amount, 0);
+  // 口座残高を手入力済みの場合は、「収入」で登録した分を口座残高にも加算（未入力なら今月の収入に含まれている）
+  const incomeEntries = d.accountBalanceInit != null ? sumIncomeEntries(d) : 0;
   const accountBalanceInit = (d.accountBalanceInit != null) ? d.accountBalanceInit : incomeVal;
-  const accountBalance = accountBalanceInit - checkedTotal - checkedPlannedTotal - nonDefaultExpenses;
+  const accountBalance = accountBalanceInit - checkedTotal - checkedPlannedTotal - nonDefaultExpenses + incomeEntries;
   const abEl = document.getElementById('account-balance-display');
   if (document.activeElement !== abEl) {
     abEl.value = accountBalance.toLocaleString();
@@ -1391,7 +1396,7 @@ function goToToday() {
 
 // ===== TAG CLASS =====
 function tagClass(cat) {
-  const map = { '食費':'tag-shokuhi','交通費':'tag-kotsu','貯金':'tag-chokin','NISA':'tag-nisa','JO1':'tag-jo1','その他':'tag-sonota','貯金使用':'tag-chokin-use','NISA使用':'tag-nisa-use','JO1使用':'tag-jo1-use' };
+  const map = { '食費':'tag-shokuhi','交通費':'tag-kotsu','貯金':'tag-chokin','NISA':'tag-nisa','JO1':'tag-jo1','その他':'tag-sonota','貯金使用':'tag-chokin-use','NISA使用':'tag-nisa-use','JO1使用':'tag-jo1-use','収入':'tag-shunyu' };
   return map[cat] || 'tag-sonota';
 }
 
@@ -1483,6 +1488,7 @@ function addExpense() {
     entry.date = `${now.getMonth() + 1}/${now.getDate()}`; // 実際の今日の日付（括りと暦月がずれるため表示月ではなく実日付）
     getCurrentData().expenses.push(entry);
   }
+  if (cat === '収入') addToIncome(placedKey, amount); // 収入は今月の収入に加算
   saveData();
 
   document.getElementById('entry-day').value = '';
@@ -1498,9 +1504,26 @@ function addExpense() {
   showToast(placedKey === getCurrentKey() ? '登録しました！' : `${+placedKey.split('-')[1]}月分に登録しました！`);
 }
 
+// ===== 収入（用途「収入」の登録は今月の収入に加算） =====
+function sumIncomeEntries(d) {
+  return (d.expenses || []).filter(e => e.category === '収入').reduce((s, e) => s + e.amount, 0);
+}
+// 指定した月の「今月の収入」に加算（マイナスで減算）。表示中の月なら入力欄も更新
+function addToIncome(key, delta) {
+  if (!delta) return;
+  if (!state.data[key]) state.data[key] = { income: 0, expenses: [], overrides: {} };
+  state.data[key].income = (state.data[key].income || 0) + delta;
+  if (key === getCurrentKey()) {
+    const v = state.data[key].income;
+    document.getElementById('income-input').value = v ? v.toLocaleString() : '';
+  }
+}
+
 // ===== DELETE EXPENSE =====
 function deleteExpense(index) {
   const d = getCurrentData();
+  const removed = d.expenses[index];
+  if (removed && removed.category === '収入') addToIncome(getCurrentKey(), -removed.amount);
   d.expenses.splice(index, 1);
   saveData();
   renderExpenseList();
@@ -1515,6 +1538,7 @@ function duplicateExpense(index) {
   const now = new Date();
   const date = `${now.getMonth() + 1}/${now.getDate()}`; // 実際の今日の日付（括りと暦月がずれるため表示月ではなく実日付）
   d.expenses.push({ id: Date.now(), date, category: e.category, item: e.item, amount: e.amount });
+  if (e.category === '収入') addToIncome(getCurrentKey(), e.amount);
   saveData();
   renderExpenseList();
   recalc();
@@ -1609,10 +1633,18 @@ function defaultDayInfo(eff, checkedVal, year, month) {
 }
 
 // ===== EDIT SHEET =====
+// 用途「収入」は通常支出の編集でのみ選べる
+function setEditIncomeOption(enabled) {
+  const opt = document.getElementById('edit-cat-income');
+  opt.disabled = !enabled;
+  opt.hidden = !enabled;
+}
+
 function openEditExpense(index) {
   const d = getCurrentData();
   const e = d.expenses[index];
   editTarget = { type: 'expense', index };
+  setEditIncomeOption(true);
   document.getElementById('edit-sheet-title').textContent = '支出を編集';
   // 月は支出の日付の月で固定
   const dt = expenseDateInBucket(e.date, state.currentYear, state.currentMonth) || new Date();
@@ -1632,6 +1664,7 @@ function openEditPlanned(id) {
   const e = (d.plannedExpenses || []).find(e => e.id === id);
   if (!e) return;
   editTarget = { type: 'plannedExpense', id };
+  setEditIncomeOption(false);
   // 月は設定済みの日付の月、なければ表示中の月で固定
   const p = e.dateKey ? e.dateKey.split('-').map(Number) : [state.currentYear, state.currentMonth, ''];
   editTarget.baseYear = p[0];
@@ -1649,6 +1682,7 @@ function openEditPlanned(id) {
 function openEditDefaultGlobal(index) {
   const e = state.settings.defaults[index];
   editTarget = { type: 'defaultGlobal', index };
+  setEditIncomeOption(false);
   document.getElementById('edit-date-row').style.display = 'flex';
   document.getElementById('edit-month-label').textContent = '毎月';
   fillDaySelect('edit-day', 'なし', e.day || '');
@@ -1665,6 +1699,7 @@ function openEditDefault(defId) {
   const base = state.settings.defaults.find(e => e.defId === defId);
   const effective = getEffectiveDefault(base, overrides);
   editTarget = { type: 'default', defId };
+  setEditIncomeOption(false);
   document.getElementById('edit-date-row').style.display = 'flex';
   document.getElementById('edit-month-label').textContent = `${state.currentMonth}月`;
   fillDaySelect('edit-day', 'なし', effective.day || '');
@@ -1688,16 +1723,20 @@ function saveEdit() {
     const e = d.expenses[editTarget.index];
     const dt = calendarDate(dayStr, editTarget.baseYear, editTarget.baseMonth);
     if (!dt) { showToast(`${editTarget.baseMonth}月${dayStr}日はありません`); return; }
+    // 収入だった分を一旦戻す（変更後が収入なら移動先の月で加算し直す）
+    if (e.category === '収入') addToIncome(getCurrentKey(), -e.amount);
     e.category = cat;
     e.item = item || e.item;
     e.amount = amount;
+    let k = getCurrentKey();
     const newDate = `${dt.getMonth() + 1}/${dt.getDate()}`;
     if (newDate !== e.date) {
       // 日付が変わったら、その日付の月の括りへ移す
       d.expenses.splice(editTarget.index, 1);
-      const k = placeExpense(e, dt);
+      k = placeExpense(e, dt);
       if (k !== getCurrentKey()) showToast(`${+k.split('-')[1]}月分に移動しました`);
     }
+    if (e.category === '収入') addToIncome(k, e.amount);
   } else if (editTarget.type === 'plannedExpense') {
     const d = getCurrentData();
     const e = (d.plannedExpenses || []).find(e => e.id === editTarget.id);
@@ -1747,7 +1786,7 @@ function renderTotalBar() {
   document.getElementById('total-filter-label').textContent = filter;
   let total = 0;
   if (filter === '全体') {
-    total = allExpenses.reduce((s, e) => s + e.amount, 0);
+    total = allExpenses.filter(e => e.category !== '収入').reduce((s, e) => s + e.amount, 0); // 収入は支出合計に含めない
   } else {
     total = allExpenses.filter(e => e.category === filter).reduce((s, e) => s + e.amount, 0);
   }
@@ -1786,7 +1825,7 @@ function renderTotalBar() {
 
 // ===== FILTER SHEET =====
 function openFilterSheet() {
-  const categories = ['全体', '食費', '交通費', '貯金', 'NISA', 'JO1', 'その他', '貯金使用', 'NISA使用', 'JO1使用'];
+  const categories = ['全体', '食費', '交通費', '貯金', 'NISA', 'JO1', 'その他', '貯金使用', 'NISA使用', 'JO1使用', '収入'];
   const opts = document.getElementById('filter-options');
   opts.innerHTML = categories.map(c => `
     <div class="filter-option ${c === state.totalFilter ? 'selected' : ''}" onclick="selectFilter('${c}')">
@@ -1885,10 +1924,10 @@ function saveAccountBalance() {
     .filter(e => checkedPlanned[e.id])
     .reduce((s, e) => s + e.amount, 0);
   const nonDefaultExpenses = (d.expenses || [])
-    .filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用')
+    .filter(e => e.category !== '貯金使用' && e.category !== 'NISA使用' && e.category !== 'JO1使用' && e.category !== '収入')
     .reduce((s, e) => s + e.amount, 0);
   // 表示値から逆算してinitを保存
-  d.accountBalanceInit = entered + checkedTotal + checkedPlannedTotal + nonDefaultExpenses;
+  d.accountBalanceInit = entered + checkedTotal + checkedPlannedTotal + nonDefaultExpenses - sumIncomeEntries(d);
   saveData();
   recalc();
 }
