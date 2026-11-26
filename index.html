@@ -24,7 +24,7 @@
     --pink-border: #f9c5d8;
     --pink-mid: #f7a8c4;
     --text-dark: #d41b6a;
-    --text-body: #333;
+    --text-body: #4B464E;
     --white: #ffffff;
     --shadow: 0 2px 8px rgba(240,81,138,0.12);
     --radius: 8px;
@@ -32,6 +32,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { overflow: hidden; width: 100%; height: 100%; }
+  input, textarea, select, button { color: var(--text-body); } /* 色指定のない入力欄・ボタンも本文色に（システムの黒・青にしない） */
   body {
     font-family: 'LINESeedJP', sans-serif;
     background: var(--pink-bg);
