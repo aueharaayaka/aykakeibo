@@ -168,7 +168,7 @@ All colors and radii are CSS custom properties defined in `:root`:
 --pink-border: #f9c5d8  /* borders */
 --pink-mid: #f7a8c4     /* muted/inactive */
 --text-dark: #d41b6a    /* dark pink text, headers */
---text-body: #5C5760    /* body text (all "black" text) */
+--text-body: #544F58    /* body text (all "black" text) */
 --white: #ffffff
 --shadow: 0 2px 8px rgba(240,81,138,0.12)
 --radius: 8px
